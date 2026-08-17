@@ -1,0 +1,249 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export type Lang = "en" | "ar";
+
+type Dict = Record<string, string>;
+
+const en: Dict = {
+  "nav.home": "Home",
+  "nav.shop": "Shop",
+  "nav.categories": "Categories",
+  "nav.new": "New Arrivals",
+  "nav.about": "About",
+  "nav.contact": "Contact",
+  "nav.cart": "Cart",
+  "nav.menu": "Menu",
+  "hero.eyebrow": "Household · Juba, South Sudan",
+  "hero.title": "Everything your home needs, delivered to your door.",
+  "hero.subtitle":
+    "Quality kitchenware, bags, shoes, oils and household essentials. Order in under a minute — pay on delivery.",
+  "hero.cta": "Shop Now",
+  "hero.cta2": "Browse Categories",
+  "home.categories": "Shop by Category",
+  "home.featured": "Featured Products",
+  "home.new": "New Arrivals",
+  "home.best": "Best Sellers",
+  "home.offers": "Special Offers",
+  "home.why": "Why Shop With BBM",
+  "why.quality": "Quality Products",
+  "why.qualityD": "Carefully selected for every home.",
+  "why.price": "Affordable Prices",
+  "why.priceD": "Fair prices in SSP, always.",
+  "why.trust": "Trusted Local Business",
+  "why.trustD": "Proudly serving families in Juba.",
+  "why.delivery": "Fast Delivery",
+  "why.deliveryD": "To your door across Juba.",
+  "home.testimonials": "What Families Say",
+  "home.visit": "Visit Our Store",
+  "home.contact": "Get in Touch",
+  "product.add": "Add to Cart",
+  "product.out": "Out of Stock",
+  "product.wish": "Save",
+  "product.share": "Share",
+  "product.related": "You may also like",
+  "product.stock": "In stock",
+  "product.qty": "Quantity",
+  "product.desc": "Description",
+  "cart.title": "Your Cart",
+  "cart.empty": "Your cart is empty.",
+  "cart.continue": "Continue Shopping",
+  "cart.subtotal": "Subtotal",
+  "cart.total": "Total",
+  "cart.delivery": "Delivery",
+  "cart.checkout": "Proceed to Checkout",
+  "cart.remove": "Remove",
+  "checkout.title": "Checkout",
+  "checkout.contact": "Contact",
+  "checkout.name": "Full Name",
+  "checkout.phone": "Phone Number",
+  "checkout.phone2": "Alternative Phone (optional)",
+  "checkout.delivery": "Delivery",
+  "checkout.address": "Delivery Address",
+  "checkout.area": "Area",
+  "checkout.city": "City",
+  "checkout.notes": "Additional Notes (optional)",
+  "checkout.payment": "Payment Method",
+  "checkout.cod": "Cash on Delivery",
+  "checkout.mpesa": "M-Pesa",
+  "checkout.pickup": "Store Pickup",
+  "checkout.mpesaNote": "Send payment to our M-Pesa number and enter the transaction ID below.",
+  "checkout.txid": "M-Pesa Transaction ID (optional)",
+  "checkout.place": "Place Order",
+  "checkout.summary": "Order Summary",
+  "success.title": "Thank you!",
+  "success.msg": "Your order has been received. We will contact you shortly to confirm your order.",
+  "success.order": "Order Number",
+  "success.home": "Back to Home",
+  "success.whatsapp": "Send order on WhatsApp",
+  "search.placeholder": "Search products…",
+  "search.none": "No products found.",
+  "wishlist.title": "Saved Items",
+  "wishlist.empty": "You have not saved any items yet.",
+  "shop.title": "Shop",
+  "shop.all": "All",
+  "cats.title": "Categories",
+  "footer.tag": "Household goods for every family in Juba.",
+  "footer.hours": "Store Hours",
+  "footer.hoursValue": "Mon – Sat · 8:00 – 20:00",
+  "footer.rights": "All rights reserved.",
+  "wa.help": "Need help? Chat on WhatsApp",
+  "about.title": "About BBM",
+  "about.body":
+    "BBM is a family-run household store in Munuki, Block B, Juba. We hand-pick every product to bring quality and value to South Sudanese homes. Order online, pay on delivery, and enjoy fast local service.",
+  "contact.title": "Contact Us",
+  "contact.address": "Munuki, Block B, Juba, South Sudan",
+  "contact.phone": "Phone",
+  "contact.whatsapp": "WhatsApp",
+  "contact.email": "Email",
+  "form.required": "Please fill in all required fields.",
+  currency: "SSP",
+};
+
+const ar: Dict = {
+  "nav.home": "الرئيسية",
+  "nav.shop": "المتجر",
+  "nav.categories": "الأقسام",
+  "nav.new": "وصل حديثًا",
+  "nav.about": "من نحن",
+  "nav.contact": "اتصل بنا",
+  "nav.cart": "السلة",
+  "nav.menu": "القائمة",
+  "hero.eyebrow": "أدوات منزلية · جوبا، جنوب السودان",
+  "hero.title": "كل ما يحتاجه بيتك، يصل إلى بابك.",
+  "hero.subtitle":
+    "أدوات مطبخ، حقائب، أحذية، زيوت ومستلزمات منزلية بجودة عالية. اطلب في أقل من دقيقة وادفع عند الاستلام.",
+  "hero.cta": "تسوق الآن",
+  "hero.cta2": "تصفح الأقسام",
+  "home.categories": "تسوق حسب القسم",
+  "home.featured": "منتجات مميزة",
+  "home.new": "وصل حديثًا",
+  "home.best": "الأكثر مبيعًا",
+  "home.offers": "عروض خاصة",
+  "home.why": "لماذا BBM",
+  "why.quality": "منتجات عالية الجودة",
+  "why.qualityD": "مختارة بعناية لكل بيت.",
+  "why.price": "أسعار مناسبة",
+  "why.priceD": "بأسعار عادلة بالجنيه دائمًا.",
+  "why.trust": "متجر محلي موثوق",
+  "why.trustD": "نخدم عائلات جوبا بفخر.",
+  "why.delivery": "توصيل سريع",
+  "why.deliveryD": "إلى باب منزلك في جوبا.",
+  "home.testimonials": "ماذا تقول العائلات",
+  "home.visit": "زُر متجرنا",
+  "home.contact": "تواصل معنا",
+  "product.add": "أضف إلى السلة",
+  "product.out": "غير متوفر",
+  "product.wish": "احفظ",
+  "product.share": "مشاركة",
+  "product.related": "قد يعجبك أيضًا",
+  "product.stock": "متوفر",
+  "product.qty": "الكمية",
+  "product.desc": "الوصف",
+  "cart.title": "سلتك",
+  "cart.empty": "سلتك فارغة.",
+  "cart.continue": "متابعة التسوق",
+  "cart.subtotal": "المجموع الفرعي",
+  "cart.total": "الإجمالي",
+  "cart.delivery": "التوصيل",
+  "cart.checkout": "إتمام الطلب",
+  "cart.remove": "إزالة",
+  "checkout.title": "إتمام الطلب",
+  "checkout.contact": "بيانات التواصل",
+  "checkout.name": "الاسم الكامل",
+  "checkout.phone": "رقم الهاتف",
+  "checkout.phone2": "رقم بديل (اختياري)",
+  "checkout.delivery": "التوصيل",
+  "checkout.address": "عنوان التوصيل",
+  "checkout.area": "المنطقة",
+  "checkout.city": "المدينة",
+  "checkout.notes": "ملاحظات إضافية (اختياري)",
+  "checkout.payment": "طريقة الدفع",
+  "checkout.cod": "الدفع عند الاستلام",
+  "checkout.mpesa": "إم-بيسا",
+  "checkout.pickup": "الاستلام من المتجر",
+  "checkout.mpesaNote": "أرسل المبلغ إلى رقم إم-بيسا وأدخل رقم العملية أدناه.",
+  "checkout.txid": "رقم عملية إم-بيسا (اختياري)",
+  "checkout.place": "تأكيد الطلب",
+  "checkout.summary": "ملخص الطلب",
+  "success.title": "شكرًا لك!",
+  "success.msg": "تم استلام طلبك. سنتواصل معك قريبًا لتأكيد الطلب.",
+  "success.order": "رقم الطلب",
+  "success.home": "العودة للرئيسية",
+  "success.whatsapp": "أرسل الطلب على واتساب",
+  "search.placeholder": "ابحث عن منتج…",
+  "search.none": "لا توجد منتجات.",
+  "wishlist.title": "المحفوظات",
+  "wishlist.empty": "لم تحفظ أي منتج بعد.",
+  "shop.title": "المتجر",
+  "shop.all": "الكل",
+  "cats.title": "الأقسام",
+  "footer.tag": "أدوات منزلية لكل عائلة في جوبا.",
+  "footer.hours": "ساعات العمل",
+  "footer.hoursValue": "الاثنين – السبت · 8:00 – 20:00",
+  "footer.rights": "جميع الحقوق محفوظة.",
+  "wa.help": "تحتاج مساعدة؟ راسلنا على واتساب",
+  "about.title": "عن BBM",
+  "about.body":
+    "BBM متجر عائلي للأدوات المنزلية في منوكي، بلوك ب، جوبا. نختار كل منتج بعناية لنقدم الجودة والقيمة لبيوت جنوب السودان. اطلب عبر الإنترنت، ادفع عند الاستلام، واستمتع بخدمة محلية سريعة.",
+  "contact.title": "اتصل بنا",
+  "contact.address": "منوكي، بلوك ب، جوبا، جنوب السودان",
+  "contact.phone": "هاتف",
+  "contact.whatsapp": "واتساب",
+  "contact.email": "البريد الإلكتروني",
+  "form.required": "يرجى تعبئة جميع الحقول المطلوبة.",
+  currency: "جنيه",
+};
+
+const DICTS: Record<Lang, Dict> = { en, ar };
+
+type Ctx = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (k: string) => string;
+  dir: "ltr" | "rtl";
+};
+
+const I18nCtx = createContext<Ctx | null>(null);
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>("en");
+
+  useEffect(() => {
+    const saved = (typeof window !== "undefined" &&
+      localStorage.getItem("bbm.lang")) as Lang | null;
+    if (saved === "en" || saved === "ar") setLangState(saved);
+  }, []);
+
+  useEffect(() => {
+    const dir = lang === "ar" ? "rtl" : "ltr";
+    document.documentElement.setAttribute("lang", lang);
+    document.documentElement.setAttribute("dir", dir);
+  }, [lang]);
+
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      localStorage.setItem("bbm.lang", l);
+    } catch (e) {
+      void e;
+    }
+  };
+
+  const t = (k: string) => DICTS[lang][k] ?? k;
+
+  return (
+    <I18nCtx.Provider value={{ lang, setLang, t, dir: lang === "ar" ? "rtl" : "ltr" }}>
+      {children}
+    </I18nCtx.Provider>
+  );
+}
+
+export function useI18n() {
+  const ctx = useContext(I18nCtx);
+  if (!ctx) throw new Error("useI18n outside provider");
+  return ctx;
+}
+
+export function bilingual<T extends { en: string; ar: string }>(v: T, lang: Lang) {
+  return v[lang];
+}
