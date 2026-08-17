@@ -3,17 +3,19 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import viteReact from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
+import netlify from "@netlify/vite-plugin-tanstack-start";
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   server: {
     host: "::",
     port: 8080,
   },
+
   resolve: {
     alias: {
       "@": "/src",
     },
+
     dedupe: [
       "react",
       "react-dom",
@@ -23,20 +25,31 @@ export default defineConfig(({ command }) => ({
       "@tanstack/query-core",
     ],
   },
+
   plugins: [
     tailwindcss(),
-    tsConfigPaths({ projects: ["./tsconfig.json"] }),
+
+    tsConfigPaths({
+      projects: ["./tsconfig.json"],
+    }),
+
     tanstackStart({
-      server: { entry: "server" },
+      server: {
+        entry: "server",
+      },
+
       importProtection: {
         behavior: "error",
+
         client: {
           files: ["**/server/**"],
           specifiers: ["server-only"],
         },
       },
     }),
-    command === "build" ? nitro({ defaultPreset: "node-server" }) : undefined,
+
+    netlify(),
+
     viteReact(),
   ].filter(Boolean),
-}));
+});
