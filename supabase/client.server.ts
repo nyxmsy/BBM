@@ -3,29 +3,38 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // SERVER-ONLY FILE. Never import this from client components.
 
 function getSupabaseUrl(): string {
-  return (
+  const url =
     process.env.SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) ||
-    "https://kwvsvxahejllixzwwxeb.supabase.co"
-  );
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL);
+
+  if (!url) {
+    throw new Error("Missing SUPABASE_URL environment variable.");
+  }
+  return url;
 }
 
 function getSupabaseAnonKey(): string {
-  return (
+  const anonKey =
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3dnN2eGFoZWpsbGl4end3eGViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNTg5NDcsImV4cCI6MjEwMjYzNDk0N30.WE8SKkt_N9zitONtxqO-lvMsfiTPDbZrW1VAageO5Wc"
-  );
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY);
+
+  if (!anonKey) {
+    throw new Error("Missing SUPABASE_ANON_KEY environment variable.");
+  }
+  return anonKey;
 }
 
 function getSupabaseServiceRoleKey(): string {
-  return (
+  const serviceKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.SUPABASE_SERVICE_ROLE_KEY) ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3dnN2eGFoZWpsbGl4end3eGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzA1ODk0NywiZXhwIjoyMTAyNjM0OTQ3fQ.OqRMgRXX5zCsYlTVsmTR2ZtYYrpei-4Tu7STpmmhZ9k"
-  );
+    (typeof import.meta !== "undefined" && import.meta.env?.SUPABASE_SERVICE_ROLE_KEY);
+
+  if (!serviceKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable.");
+  }
+  return serviceKey;
 }
 
 /** Anonymous server-side client — for public reads (product catalog, checkout). */
@@ -52,11 +61,7 @@ export function getUserScopedServerClient(accessToken: string | undefined | null
 
 /** Service-role client for privileged operations. */
 export function getServiceRoleClient(): SupabaseClient {
-  const serviceKey = getSupabaseServiceRoleKey();
-  if (!serviceKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY server env var.");
-  }
-  return createClient(getSupabaseUrl(), serviceKey, {
+  return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
     auth: { persistSession: false },
   });
 }
