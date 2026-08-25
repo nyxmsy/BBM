@@ -78,7 +78,6 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
 
       {/* Mobile Drawer Shell */}
       <div className="fixed inset-y-0 start-0 flex h-dvh w-[92%] max-w-sm flex-col overflow-hidden bg-background shadow-2xl animate-in slide-in-from-left duration-200 ease-out border-e border-border/60">
-        
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between border-b border-border/60 px-4 py-3 bg-card/90 backdrop-blur-md">
           <Link to="/" onClick={onClose} className="inline-flex items-center">
@@ -124,7 +123,6 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
 
         {/* Scrollable Content */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5 space-y-4">
-          
           {/* Search Form */}
           <form onSubmit={handleSearchSubmit} className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -253,7 +251,6 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
               ))}
             </div>
           </div>
-
         </div>
 
         {/* Footer */}
@@ -274,9 +271,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
               className="btn-tap flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-semibold text-foreground hover:bg-secondary transition"
             >
               <Phone className="h-4 w-4 text-primary shrink-0" />
-              <span className="truncate">
-                {lang === "ar" ? "اتصل بالمتجر" : "Call Store"}
-              </span>
+              <span className="truncate">{lang === "ar" ? "اتصل بالمتجر" : "Call Store"}</span>
             </a>
           </div>
 
@@ -293,7 +288,6 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
             </Link>
           </div>
         </div>
-
       </div>
     </div>
   );

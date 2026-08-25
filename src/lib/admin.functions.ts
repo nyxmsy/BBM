@@ -1,17 +1,109 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getServiceRoleClient, getUserScopedServerClient } from "../../supabase/client.server";
 
-export const getMyAccess = createServerFn({ method: "GET" }).handler(async () => {
-  return { userId: "admin_user", roles: ["admin"], isStaff: true };
-});
+type UserRoleRow = { role: "admin" | "staff" };
 
-export const claimFirstAdmin = createServerFn({ method: "POST" }).handler(
-  async (): Promise<{ granted: boolean }> => {
-    return { granted: true };
-  },
-);
+const withAuthToken = z.object({ accessToken: z.string().min(1) });
 
-const productSchema = z.object({
+// Real admin/staff check using POST so JSON payloads are received reliably
+export const getMyAccess = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const supabase = getUserScopedServerClient(data.accessToken);
+
+      const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
+      if (userError || !userData?.user) {
+        return { isAdmin: false, isStaff: false };
+      }
+
+      const { data: roleRows, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+
+      if (error || !roleRows) return { isAdmin: false, isStaff: false };
+
+      const roles = (roleRows as UserRoleRow[]).map((r) => r.role);
+      return {
+        isAdmin: roles.includes("admin"),
+        isStaff: roles.includes("admin") || roles.includes("staff"),
+      };
+    } catch {
+      return { isAdmin: false, isStaff: false };
+    }
+  });
+
+// First-admin bootstrap using service-role client
+export const claimFirstAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const callerClient = getUserScopedServerClient(data.accessToken);
+      const { data: userData, error: userError } = await callerClient.auth.getUser(
+        data.accessToken,
+      );
+      if (userError || !userData?.user) {
+        return { granted: false, error: "Not authenticated." };
+      }
+
+      const serviceClient = getServiceRoleClient();
+
+      const { count, error: countError } = await serviceClient
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+
+      if (countError) {
+        return { granted: false, error: `Failed to check admins: ${countError.message}` };
+      }
+
+      if ((count ?? 0) > 0) {
+        return { granted: false, error: "Admin already exists." };
+      }
+
+      const { error: insertError } = await serviceClient
+        .from("user_roles")
+        .insert({ user_id: userData.user.id, role: "admin" });
+
+      if (insertError) {
+        return { granted: false, error: `Failed to insert role: ${insertError.message}` };
+      }
+
+      return { granted: true, error: null };
+    } catch (e: unknown) {
+      return {
+        granted: false,
+        error: e instanceof Error ? e.message : "Unknown error occurred",
+      };
+    }
+  });
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  kitchen: "🍽️",
+  cookware: "🍳",
+  bags: "👜",
+  shoes: "👟",
+  oils: "🥥",
+  lotions: "🧴",
+  cleaning: "🧼",
+  household: "🧺",
+};
+
+const CATEGORY_TINT: Record<string, string> = {
+  kitchen: "oklch(0.94 0.03 75)",
+  cookware: "oklch(0.88 0.05 45)",
+  bags: "oklch(0.86 0.06 35)",
+  shoes: "oklch(0.88 0.05 240)",
+  oils: "oklch(0.94 0.03 100)",
+  lotions: "oklch(0.94 0.04 90)",
+  cleaning: "oklch(0.93 0.04 200)",
+  household: "oklch(0.9 0.05 70)",
+};
+
+export const productSchema = z.object({
+  accessToken: z.string().min(1),
   slug: z
     .string()
     .min(2)
@@ -26,7 +118,7 @@ const productSchema = z.object({
   category: z.string().min(1).max(40),
   emoji: z.string().max(8).default("📦"),
   tint: z.string().max(60).default("oklch(0.92 0.03 75)"),
-  image_url: z.string().max(2000000).nullable().optional(),
+  image_url: z.string().nullable().optional(),
   stock: z.number().int().min(0),
   featured: z.boolean().default(false),
   best_seller: z.boolean().default(false),
@@ -35,23 +127,124 @@ const productSchema = z.object({
   sort_order: z.number().int().default(0),
 });
 
-export const listAllProducts = createServerFn({ method: "GET" }).handler(async () => {
-  const { getDbProducts } = await import("@/lib/catalog.server");
-  return getDbProducts();
-});
+export const listAllProducts = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const supabase = getUserScopedServerClient(data.accessToken);
+      const { data: rows, error } = await supabase
+        .from("products")
+        .select("*, product_images(id, product_id, image_url, sort_order, is_primary)")
+        .order("sort_order", { ascending: true });
+
+      if (!error && rows && rows.length > 0) {
+        const productRows = rows as unknown as (ProductRow & {
+          product_images?: { image_url: string }[];
+        })[];
+        return productRows.map((p) => ({
+          slug: p.slug,
+          name_en: p.name_en,
+          name_ar: p.name_ar,
+          desc_en: p.description_en ?? "",
+          desc_ar: p.description_ar ?? "",
+          price: Number(p.price),
+          compare_at:
+            p.compare_at_price !== null && p.compare_at_price !== undefined
+              ? Number(p.compare_at_price)
+              : null,
+          category: p.category,
+          emoji: CATEGORY_EMOJI[p.category] ?? "📦",
+          tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
+          image_url: p.product_images?.[0]?.image_url ?? null,
+          stock: p.stock,
+          featured: p.is_featured,
+          best_seller: p.is_best_seller,
+          new_arrival: p.is_new_arrival,
+          active: p.is_active,
+          sort_order: p.sort_order,
+        }));
+      }
+    } catch {
+      // fallback below
+    }
+    const { defaultProductRows } = await import("@/lib/catalog.server");
+    return defaultProductRows.map((p) => ({
+      slug: p.slug,
+      name_en: p.name_en,
+      name_ar: p.name_ar,
+      desc_en: p.description_en ?? "",
+      desc_ar: p.description_ar ?? "",
+      price: Number(p.price),
+      compare_at:
+        p.compare_at_price !== null && p.compare_at_price !== undefined
+          ? Number(p.compare_at_price)
+          : null,
+      category: p.category,
+      emoji: CATEGORY_EMOJI[p.category] ?? "📦",
+      tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
+      image_url: null,
+      stock: p.stock,
+      featured: p.is_featured,
+      best_seller: p.is_best_seller,
+      new_arrival: p.is_new_arrival,
+      active: p.is_active,
+      sort_order: p.sort_order,
+    }));
+  });
 
 export const saveProduct = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => productSchema.parse(d))
   .handler(async ({ data }) => {
-    const { upsertDbProduct } = await import("@/lib/catalog.server");
-    await upsertDbProduct(data);
+    const supabase = getUserScopedServerClient(data.accessToken);
+    const { data: product, error } = await supabase
+      .from("products")
+      .upsert(
+        {
+          slug: data.slug,
+          name_en: data.name_en,
+          name_ar: data.name_ar,
+          description_en: data.desc_en,
+          description_ar: data.desc_ar,
+          price: data.price,
+          compare_at_price: data.compare_at ?? null,
+          category: data.category,
+          stock: data.stock,
+          is_featured: data.featured,
+          is_best_seller: data.best_seller,
+          is_new_arrival: data.new_arrival,
+          is_active: data.active,
+          sort_order: data.sort_order,
+        },
+        { onConflict: "slug" },
+      )
+      .select("id")
+      .single();
+
+    if (error) throw new Error(`Failed to save product: ${error.message}`);
+
+    if (data.image_url && product?.id) {
+      await supabase.from("product_images").delete().eq("product_id", product.id);
+      await supabase.from("product_images").insert({
+        product_id: product.id,
+        image_url: data.image_url,
+        sort_order: 0,
+        is_primary: true,
+      });
+    }
+
     return { ok: true };
   });
 
 export const deleteProduct = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ slug: z.string() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ accessToken: z.string().min(1), slug: z.string().min(1) }).parse(d),
+  )
   .handler(async ({ data }) => {
-    const { deleteDbProduct } = await import("@/lib/catalog.server");
-    await deleteDbProduct(data.slug);
+    const supabase = getUserScopedServerClient(data.accessToken);
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: false })
+      .eq("slug", data.slug);
+    if (error) throw new Error(`Failed to delete product: ${error.message}`);
     return { ok: true };
   });

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { listAllProducts, saveProduct, deleteProduct } from "@/lib/admin.functions";
+import { auth } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/products";
 import { formatSSP } from "@/lib/format";
 import { Loader2, Plus, Trash2, Pencil, Upload, ImageOff } from "lucide-react";
@@ -63,20 +64,38 @@ function ProductsAdmin() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({ queryKey: ["admin-products"], queryFn: () => fetchAll() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-products"],
+    queryFn: async () => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No active session");
+      return await fetchAll({ data: { accessToken: token } });
+    },
+  });
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["admin-products"] });
     qc.invalidateQueries({ queryKey: ["products"] });
   };
   const saveMut = useMutation({
-    mutationFn: (row: Row) => save({ data: row }),
+    mutationFn: async (row: Row) => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No active session");
+      return await save({ data: { ...row, accessToken: token } });
+    },
     onSuccess: () => {
       invalidate();
       setDraft(null);
     },
   });
   const delMut = useMutation({
-    mutationFn: (slug: string) => del({ data: { slug } }),
+    mutationFn: async (slug: string) => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No active session");
+      return await del({ data: { slug, accessToken: token } });
+    },
     onSuccess: invalidate,
   });
 

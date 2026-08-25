@@ -5,6 +5,7 @@ import { getMyAccess, claimFirstAdmin } from "@/lib/admin.functions";
 import { auth } from "@/lib/auth";
 import { BbmLogo } from "@/components/BbmLogo";
 import { LogOut, Package, ShoppingBag, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
@@ -22,14 +23,56 @@ export const Route = createFileRoute("/_authenticated/admin")({
 function AdminLayout() {
   const nav = useNavigate();
   const qc = useQueryClient();
-  const access = useServerFn(getMyAccess);
-  const claim = useServerFn(claimFirstAdmin);
+  const accessFn = useServerFn(getMyAccess);
+  const claimFn = useServerFn(claimFirstAdmin);
 
-  const { data, isLoading } = useQuery({ queryKey: ["access"], queryFn: () => access() });
-  const claimMut = useMutation({
-    mutationFn: () => claim(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["access"] }),
+  const [claimErrorMsg, setClaimErrorMsg] = useState<string | null>(null);
+
+  const {
+    data,
+    isLoading,
+    error: accessError,
+  } = useQuery({
+    queryKey: ["access"],
+    queryFn: async () => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error("No active session — please sign in again.");
+      }
+      return await accessFn({ data: { accessToken: token } });
+    },
+    retry: false,
   });
+
+  const claimMut = useMutation({
+    mutationFn: async () => {
+      setClaimErrorMsg(null);
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error("No active session — please sign in again.");
+      }
+      const result = await claimFn({ data: { accessToken: token } });
+      if (result && "error" in result && result.error) {
+        throw new Error(String(result.error));
+      }
+      return result;
+    },
+    onSuccess: (res) => {
+      if (res?.granted) {
+        qc.invalidateQueries({ queryKey: ["access"] });
+      }
+    },
+    onError: (err: Error) => {
+      setClaimErrorMsg(err.message || "Failed to claim access.");
+    },
+  });
+
+  const handleClaim = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    claimMut.mutate();
+  };
 
   const signOut = async () => {
     await auth.signOut();
@@ -54,21 +97,38 @@ function AdminLayout() {
             Your account is signed in but has no staff role yet. If you are the store owner setting
             up for the first time, claim admin access below.
           </p>
+
+          {accessError && (
+            <p className="mt-3 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
+              Access check: {accessError.message}
+            </p>
+          )}
+
+          {(claimMut.isError || claimErrorMsg) && (
+            <p className="mt-3 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
+              {claimErrorMsg || claimMut.error?.message}
+            </p>
+          )}
+
           <button
-            onClick={() => claimMut.mutate()}
+            type="button"
+            onClick={handleClaim}
             disabled={claimMut.isPending}
-            className="btn-tap mt-5 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            className="btn-tap mt-5 w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
-            {claimMut.isPending ? "Checking…" : "Claim admin access"}
+            {claimMut.isPending ? "Claiming access…" : "Claim admin access"}
           </button>
+
           {claimMut.data?.granted === false && (
             <p className="mt-3 text-sm text-destructive">
               An admin already exists. Ask them to add your account.
             </p>
           )}
+
           <button
+            type="button"
             onClick={signOut}
-            className="mt-4 text-sm text-muted-foreground hover:text-foreground"
+            className="mt-4 block w-full text-center text-sm text-muted-foreground hover:text-foreground"
           >
             Sign out
           </button>
@@ -101,6 +161,7 @@ function AdminLayout() {
               <Package className="h-4 w-4" /> Products
             </Link>
             <button
+              type="button"
               onClick={signOut}
               className="ms-2 grid h-9 w-9 place-items-center rounded-full hover:bg-secondary"
               aria-label="Sign out"

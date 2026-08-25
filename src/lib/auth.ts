@@ -1,57 +1,32 @@
-// Standalone Authentication & Session Management
-// Ready to connect to your custom auth backend / database.
+// Relative path: src/lib/auth.ts -> ../../supabase/client.ts
+// Adjust the "../../" if your actual folder depth differs.
+import { supabase } from "../../supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
-export interface User {
-  id: string;
-  email: string;
-  user_metadata?: {
-    full_name?: string;
-  };
-}
+export type { Session, User };
 
-export interface Session {
-  user: User;
-  access_token: string;
-}
+type UserRoleRow = { role: "admin" | "staff" };
 
-const STORAGE_KEY = "bbm_auth_session";
-
-function getStoredSession(): Session | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as Session;
-  } catch {
-    return null;
-  }
-}
-
-function setStoredSession(session: Session | null) {
-  if (typeof window === "undefined") return;
-  try {
-    if (session) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  } catch (e) {
-    void e;
-  }
-}
+// ============================================================================
+// Real Supabase Auth. Replaces the old localStorage mock that accepted any
+// email + 6-character password and never talked to a server.
+//
+// Session tokens are managed by the supabase-js client itself (persisted
+// and auto-refreshed under the "bbm-auth" storage key set in
+// "/supabase/client.ts"). Server functions that need to act as this user
+// (admin catalog/order management) take the access token explicitly —
+// call `auth.getSession()` and pass `session.access_token` in.
+// ============================================================================
 
 export const auth = {
   async getSession(): Promise<{ data: { session: Session | null } }> {
-    const session = getStoredSession();
-    return { data: { session } };
+    const { data } = await supabase.auth.getSession();
+    return { data };
   },
 
   async getUser(): Promise<{ data: { user: User | null }; error: Error | null }> {
-    const session = getStoredSession();
-    if (!session?.user) {
-      return { data: { user: null }, error: new Error("Not authenticated") };
-    }
-    return { data: { user: session.user }, error: null };
+    const { data, error } = await supabase.auth.getUser();
+    return { data, error };
   },
 
   async signInWithPassword({
@@ -61,26 +36,8 @@ export const auth = {
     email: string;
     password: string;
   }): Promise<{ error: Error | null }> {
-    if (!email || !password) {
-      return { error: new Error("Email and password are required") };
-    }
-    if (password.length < 6) {
-      return { error: new Error("Password must be at least 6 characters") };
-    }
-
-    const user: User = {
-      id: "usr_" + Math.random().toString(36).slice(2, 10),
-      email,
-      user_metadata: {
-        full_name: email.split("@")[0],
-      },
-    };
-    const session: Session = {
-      user,
-      access_token: "token_" + Date.now().toString(36),
-    };
-    setStoredSession(session);
-    return { error: null };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
   },
 
   async signUp({
@@ -92,30 +49,38 @@ export const auth = {
     password: string;
     options?: { data?: { full_name?: string } };
   }): Promise<{ error: Error | null }> {
-    if (!email || !password) {
-      return { error: new Error("Email and password are required") };
-    }
-    if (password.length < 6) {
-      return { error: new Error("Password must be at least 6 characters") };
-    }
-
-    const user: User = {
-      id: "usr_" + Math.random().toString(36).slice(2, 10),
+    const { error } = await supabase.auth.signUp({
       email,
-      user_metadata: {
-        full_name: options?.data?.full_name || email.split("@")[0],
-      },
-    };
-    const session: Session = {
-      user,
-      access_token: "token_" + Date.now().toString(36),
-    };
-    setStoredSession(session);
-    return { error: null };
+      password,
+      options: { data: options?.data },
+    });
+    return { error };
   },
 
   async signOut(): Promise<{ error: Error | null }> {
-    setStoredSession(null);
-    return { error: null };
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  },
+
+  /**
+   * Real admin/staff check — replaces the old getMyAccess() that returned
+   * { roles: ["admin"] } unconditionally for anyone. This reads the
+   * user_roles table through RLS, so a plain customer session can only
+   * ever see their own row (or none) — there's no client-side value to
+   * tamper with to gain admin access, unlike the old mock.
+   */
+  async getMyRoles(): Promise<{ isAdmin: boolean; isStaff: boolean }> {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+    if (!userId) return { isAdmin: false, isStaff: false };
+
+    const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    if (error || !data) return { isAdmin: false, isStaff: false };
+
+    const roles = (data as UserRoleRow[]).map((r: UserRoleRow) => r.role);
+    return {
+      isAdmin: roles.includes("admin"),
+      isStaff: roles.includes("admin") || roles.includes("staff"),
+    };
   },
 };

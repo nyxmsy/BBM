@@ -1,14 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Menu,
-  Search,
-  ShoppingBag,
-  Heart,
-  X,
-  MapPin,
-  Phone,
-  Mail,
-} from "lucide-react";
+import { Menu, Search, ShoppingBag, Heart, X, MapPin, Phone, Mail } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
@@ -157,7 +148,7 @@ function Header() {
         {/* Controls: Search, Wishlist, Cart & LangSwitch */}
         <div className="flex items-center gap-0.5 sm:gap-1">
           <SearchButton />
-          
+
           <Link
             to="/wishlist"
             aria-label="Wishlist"

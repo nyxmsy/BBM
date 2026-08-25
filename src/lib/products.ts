@@ -59,6 +59,7 @@ export type Product = {
   emoji: string;
   tint: string;
   imageUrl?: string;
+  images: string[];
   stock: number;
   featured?: boolean;
   bestSeller?: boolean;
@@ -68,9 +69,11 @@ export type Product = {
 export function getProduct(products: Product[], slug: string) {
   return products.find((p) => p.slug === slug);
 }
+
 export function byCategory(products: Product[], slug: CategorySlug) {
   return products.filter((p) => p.category === slug);
 }
+
 export function related(products: Product[], p: Product, limit = 4) {
   return products.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, limit);
 }

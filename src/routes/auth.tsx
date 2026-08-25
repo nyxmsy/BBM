@@ -66,19 +66,6 @@ function AuthPage() {
     }
   };
 
-  const continueWithDemo = async () => {
-    setErr(null);
-    setBusy(true);
-    try {
-      await auth.signInWithPassword({ email: "admin@bbm.store", password: "password123" });
-      nav({ to: "/admin" });
-    } catch {
-      setErr("Sign-in failed. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-7 shadow-sm">
@@ -90,21 +77,7 @@ function AuthPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Manage products and customer orders.</p>
 
-        <button
-          type="button"
-          onClick={continueWithDemo}
-          disabled={busy}
-          className="btn-tap mt-6 w-full rounded-full border border-border bg-background py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary disabled:opacity-60"
-        >
-          Quick Staff Access (Demo)
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or with email{" "}
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="mt-6 space-y-3">
           {mode === "signup" && (
             <input
               className={input}

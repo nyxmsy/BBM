@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listOrders, updateOrderStatus } from "@/lib/orders.functions";
+import { listOrders, updateOrderStatus, type OrderStatus } from "@/lib/orders.functions";
+import { auth } from "@/lib/auth";
 import { formatSSP } from "@/lib/format";
 import { Loader2 } from "lucide-react";
 
@@ -9,11 +10,12 @@ export const Route = createFileRoute("/_authenticated/admin/")({
   component: OrdersAdmin,
 });
 
-const STATUSES = ["new", "confirmed", "delivered", "cancelled"] as const;
+const STATUSES: OrderStatus[] = ["new", "confirmed", "out_for_delivery", "delivered", "cancelled"];
 
 const tone: Record<string, string> = {
   new: "bg-accent text-accent-foreground",
   confirmed: "bg-primary/15 text-primary",
+  out_for_delivery: "bg-amber-500/15 text-amber-700",
   delivered: "bg-emerald-500/15 text-emerald-700",
   cancelled: "bg-destructive/15 text-destructive",
 };
@@ -22,18 +24,31 @@ function OrdersAdmin() {
   const fetchOrders = useServerFn(listOrders);
   const setStatus = useServerFn(updateOrderStatus);
   const qc = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["orders"],
-    queryFn: () => fetchOrders(),
+    queryFn: async () => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No active session");
+      return await fetchOrders({ data: { accessToken: token } });
+    },
   });
+
   const mut = useMutation({
-    mutationFn: (v: { id: string; status: (typeof STATUSES)[number] }) => setStatus({ data: v }),
+    mutationFn: async (v: { id: string; status: OrderStatus }) => {
+      const { data: sessionData } = await auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No active session");
+      return await setStatus({ data: { ...v, accessToken: token } });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 
   if (isLoading)
     return <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-muted-foreground" />;
-  if (error) return <p className="text-sm text-destructive">Could not load orders.</p>;
+  if (error)
+    return <p className="text-sm text-destructive">Could not load orders: {error.message}</p>;
 
   const orders = data ?? [];
   const revenue = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
@@ -68,7 +83,8 @@ function OrdersAdmin() {
                     </span>
                   </div>
                   <div className="mt-1 text-sm text-muted-foreground">
-                    {new Date(o.created_at).toLocaleString()} · {o.payment_method.toUpperCase()}
+                    {new Date(o.created_at).toLocaleString()} ·{" "}
+                    {(o.payment_method || "COD").toUpperCase()}
                   </div>
                 </div>
                 <div className="font-display text-xl font-bold">{formatSSP(o.total, "en")}</div>
@@ -109,6 +125,7 @@ function OrdersAdmin() {
                 {STATUSES.map((s) => (
                   <button
                     key={s}
+                    type="button"
                     onClick={() => mut.mutate({ id: o.id, status: s })}
                     disabled={mut.isPending || o.status === s}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
