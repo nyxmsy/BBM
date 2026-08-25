@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { CATEGORIES, type CategorySlug } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { useI18n, bilingual } from "@/lib/i18n";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { useMemo } from "react";
 
 const search = z.object({
@@ -71,15 +72,13 @@ function Shop() {
               key={c.slug}
               to="/shop"
               search={{ cat: c.slug } as never}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                 cat === c.slug
                   ? "bg-foreground text-background"
                   : "bg-secondary text-foreground hover:bg-secondary/70"
               }`}
             >
-              <span aria-hidden className="me-1">
-                {c.emoji}
-              </span>
+              <CategoryIcon slug={c.slug} className="h-3.5 w-3.5" />
               {bilingual(c.name, lang)}
             </Link>
           ))}

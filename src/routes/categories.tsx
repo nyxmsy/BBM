@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { CATEGORIES } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { useI18n, bilingual } from "@/lib/i18n";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 export const Route = createFileRoute("/categories")({
   component: Categories,
@@ -38,10 +39,10 @@ function Categories() {
                 className="group relative flex items-center gap-4 overflow-hidden rounded-3xl border border-border/60 bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div
-                  className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl text-4xl"
+                  className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl"
                   style={{ background: c.tint }}
                 >
-                  {c.emoji}
+                  <CategoryIcon slug={c.slug} className="h-9 w-9 text-foreground/80" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-lg font-semibold">{bilingual(c.name, lang)}</div>

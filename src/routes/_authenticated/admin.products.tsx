@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/products";
 import { formatSSP } from "@/lib/format";
 import { Loader2, Plus, Trash2, Pencil, Upload, ImageOff } from "lucide-react";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsAdmin,
@@ -21,7 +22,6 @@ type Row = {
   price: number;
   compare_at: number | null;
   category: string;
-  emoji: string;
   tint: string;
   image_url: string | null;
   stock: number;
@@ -41,7 +41,6 @@ const empty: Row = {
   price: 0,
   compare_at: null,
   category: "kitchen",
-  emoji: "📦",
   tint: "oklch(0.92 0.03 75)",
   image_url: null,
   stock: 0,
@@ -236,13 +235,6 @@ function ProductsAdmin() {
                 onChange={(e) => set("stock", Number(e.target.value))}
               />
             </L>
-            <L label="Emoji">
-              <input
-                className={input}
-                value={draft.emoji}
-                onChange={(e) => set("emoji", e.target.value)}
-              />
-            </L>
             <div className="sm:col-span-2">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
                 Product photo (required)
@@ -346,7 +338,7 @@ function ProductsAdmin() {
               {p.image_url ? (
                 <img src={p.image_url} alt="" className="h-full w-full object-cover" />
               ) : (
-                p.emoji
+                <CategoryIcon slug={p.category} className="h-6 w-6 text-foreground/60" />
               )}
             </div>
             <div className="min-w-0 flex-1">

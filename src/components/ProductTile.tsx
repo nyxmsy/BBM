@@ -1,6 +1,7 @@
 import type { Product } from "@/lib/products";
 import { useI18n, bilingual } from "@/lib/i18n";
 import { formatSSP } from "@/lib/format";
+import { CategoryIcon } from "./CategoryIcon";
 
 export function ProductVisual({
   product,
@@ -24,9 +25,10 @@ export function ProductVisual({
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <span aria-hidden className="text-6xl sm:text-7xl drop-shadow-sm">
-          {product.emoji}
-        </span>
+        <CategoryIcon
+          slug={product.category}
+          className="h-16 w-16 text-foreground/50 drop-shadow-sm sm:h-20 sm:w-20"
+        />
       )}
     </div>
   );

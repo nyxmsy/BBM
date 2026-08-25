@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, Sparkles, Store, Truck, MapPin, Phone } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles, Store, Truck, MapPin, Phone, UtensilsCrossed } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useI18n, bilingual } from "@/lib/i18n";
 import { CATEGORIES, type Product } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { ProductCard } from "@/components/ProductCard";
+import { CategoryIcon } from "@/components/CategoryIcon";
+import { WhatsAppIcon, whatsappHref } from "@/components/WhatsAppIcon";
 import { STORE } from "@/lib/store";
 import heroImg from "@/assets/hero.jpg";
 
@@ -101,11 +103,11 @@ function CategoriesRow() {
             className="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <div
-              className="grid h-14 w-14 place-items-center rounded-2xl text-3xl"
+              className="grid h-14 w-14 place-items-center rounded-2xl"
               style={{ background: c.tint }}
               aria-hidden
             >
-              {c.emoji}
+              <CategoryIcon slug={c.slug} className="h-7 w-7 text-foreground/80" />
             </div>
             <div className="text-sm font-semibold">{bilingual(c.name, lang)}</div>
           </Link>
@@ -156,8 +158,8 @@ function Promo() {
             {t("hero.cta")} <ArrowRight className="h-5 w-5 rtl:rotate-180" />
           </Link>
         </div>
-        <div className="pointer-events-none absolute -end-6 -top-6 text-[16rem] leading-none opacity-20">
-          🍽️
+        <div className="pointer-events-none absolute -end-6 -top-6 opacity-20">
+          <UtensilsCrossed className="h-64 w-64" strokeWidth={1} />
         </div>
       </div>
     </section>
@@ -241,6 +243,16 @@ function Visit() {
             <li className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-primary" /> {STORE.phonePrimary}
             </li>
+            <li>
+              <a
+                href={whatsappHref(STORE.whatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 hover:text-primary"
+              >
+                <WhatsAppIcon className="h-5 w-5 text-[#25D366]" /> {STORE.whatsapp}
+              </a>
+            </li>
           </ul>
           <Link
             to="/contact"
@@ -250,7 +262,9 @@ function Visit() {
           </Link>
         </div>
         <div className="grid place-items-center rounded-2xl bg-card p-8 text-center">
-          <div className="text-7xl">🏪</div>
+          <div className="grid h-20 w-20 place-items-center rounded-2xl bg-accent/50 text-foreground">
+            <Store className="h-10 w-10" />
+          </div>
           <div className="mt-4 font-display text-xl font-semibold">BBM Household</div>
           <div className="text-sm text-muted-foreground">
             {lang === "ar" ? STORE.hours.ar : STORE.hours.en}

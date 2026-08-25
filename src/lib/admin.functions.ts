@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getServiceRoleClient, getUserScopedServerClient } from "../../supabase/client.server";
+import type { ProductRow } from "@/lib/catalog.server";
 
 type UserRoleRow = { role: "admin" | "staff" };
 
@@ -80,17 +81,6 @@ export const claimFirstAdmin = createServerFn({ method: "POST" })
     }
   });
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  kitchen: "🍽️",
-  cookware: "🍳",
-  bags: "👜",
-  shoes: "👟",
-  oils: "🥥",
-  lotions: "🧴",
-  cleaning: "🧼",
-  household: "🧺",
-};
-
 const CATEGORY_TINT: Record<string, string> = {
   kitchen: "oklch(0.94 0.03 75)",
   cookware: "oklch(0.88 0.05 45)",
@@ -116,7 +106,6 @@ export const productSchema = z.object({
   price: z.number().int().min(0),
   compare_at: z.number().int().min(0).nullable().optional(),
   category: z.string().min(1).max(40),
-  emoji: z.string().max(8).default("📦"),
   tint: z.string().max(60).default("oklch(0.92 0.03 75)"),
   image_url: z.string().nullable().optional(),
   stock: z.number().int().min(0),
@@ -153,7 +142,6 @@ export const listAllProducts = createServerFn({ method: "POST" })
               ? Number(p.compare_at_price)
               : null,
           category: p.category,
-          emoji: CATEGORY_EMOJI[p.category] ?? "📦",
           tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
           image_url: p.product_images?.[0]?.image_url ?? null,
           stock: p.stock,
@@ -179,9 +167,8 @@ export const listAllProducts = createServerFn({ method: "POST" })
         p.compare_at_price !== null && p.compare_at_price !== undefined
           ? Number(p.compare_at_price)
           : null,
-      category: p.category,
-      emoji: CATEGORY_EMOJI[p.category] ?? "📦",
-      tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
+          category: p.category,
+          tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
       image_url: null,
       stock: p.stock,
       featured: p.is_featured,

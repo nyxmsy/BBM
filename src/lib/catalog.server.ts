@@ -38,17 +38,6 @@ export type ProductRow = {
 
 type ProductIdLookupRow = { id: string; slug: string };
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  kitchen: "🍽️",
-  cookware: "🍳",
-  bags: "👜",
-  shoes: "👟",
-  oils: "🥥",
-  lotions: "🧴",
-  cleaning: "🧼",
-  household: "🧺",
-};
-
 const CATEGORY_TINT: Record<string, string> = {
   kitchen: "oklch(0.94 0.03 75)",
   cookware: "oklch(0.88 0.05 45)",
@@ -84,7 +73,6 @@ export function mapProduct(r: ProductRow): Product {
         ? toNumber(r.compare_at_price)
         : undefined,
     category: r.category as CategorySlug,
-    emoji: CATEGORY_EMOJI[r.category] ?? "📦",
     tint: CATEGORY_TINT[r.category] ?? "oklch(0.92 0.03 75)",
     imageUrl: images[0],
     images,

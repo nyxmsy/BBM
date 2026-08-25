@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { Layout } from "@/components/Layout";
 import { useI18n } from "@/lib/i18n";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { STORE } from "@/lib/store";
+import { WhatsAppIcon, whatsappHref } from "@/components/WhatsAppIcon";
 
 export const Route = createFileRoute("/order-success")({
   validateSearch: z.object({ n: z.string().optional() }),
@@ -21,9 +22,10 @@ export const Route = createFileRoute("/order-success")({
 function Success() {
   const { n } = Route.useSearch();
   const { t, lang } = useI18n();
-  const wa = `https://wa.me/${STORE.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+  const wa = whatsappHref(
+    STORE.whatsapp,
     (lang === "ar" ? "مرحبًا BBM، رقم طلبي: " : "Hello BBM, my order number is: ") + (n ?? ""),
-  )}`;
+  );
   return (
     <Layout>
       <section className="mx-auto max-w-xl px-4 py-20 text-center sm:px-6">
@@ -45,9 +47,9 @@ function Success() {
             href={wa}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-tap inline-flex items-center justify-center gap-2 rounded-full bg-[oklch(0.66_0.17_150)] px-6 text-sm font-semibold text-white"
+            className="btn-tap inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 text-sm font-semibold text-white hover:bg-[#1ebe5d]"
           >
-            <MessageCircle className="h-5 w-5" /> {t("success.whatsapp")}
+            <WhatsAppIcon className="h-5 w-5" /> {t("success.whatsapp")}
           </a>
           <Link
             to="/"

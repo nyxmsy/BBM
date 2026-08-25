@@ -6,6 +6,7 @@ import { useCart } from "@/lib/cart";
 import { BbmLogo } from "./BbmLogo";
 import { WhatsAppFab } from "./WhatsAppFab";
 import { MobileDrawer } from "./MobileDrawer";
+import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
 import { STORE } from "@/lib/store";
 
 const NAV: { key: string; to: string }[] = [
@@ -149,6 +150,16 @@ function Header() {
         <div className="flex items-center gap-0.5 sm:gap-1">
           <SearchButton />
 
+          <a
+            href={whatsappHref(STORE.whatsapp)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("wa.help")}
+            className="inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-[#25D366] hover:bg-secondary transition"
+          >
+            <WhatsAppIcon className="h-5 w-5" />
+          </a>
+
           <Link
             to="/wishlist"
             aria-label="Wishlist"
@@ -213,6 +224,16 @@ function Footer() {
             <li className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" /> {STORE.phonePrimary}
             </li>
+            <li>
+              <a
+                href={whatsappHref(STORE.whatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-primary"
+              >
+                <WhatsAppIcon className="h-4 w-4 text-[#25D366]" /> {t("contact.whatsapp")}
+              </a>
+            </li>
             <li className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-primary" /> {STORE.email}
             </li>
@@ -226,7 +247,15 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} BBM · {t("footer.rights")}
+        <p>
+          © {new Date().getFullYear()} BBM · {t("footer.rights")}
+        </p>
+        <Link
+          to="/auth"
+          className="mt-2 inline-block text-[10px] tracking-wide text-muted-foreground/50 hover:text-muted-foreground"
+        >
+          {t("footer.staff")}
+        </Link>
       </div>
     </footer>
   );

@@ -86,6 +86,7 @@ const en: Dict = {
   "footer.hours": "Store Hours",
   "footer.hoursValue": "Mon – Sat · 8:00 – 20:00",
   "footer.rights": "All rights reserved.",
+  "footer.staff": "Staff",
   "wa.help": "Need help? Chat on WhatsApp",
   "about.title": "About BBM",
   "about.body":
@@ -181,6 +182,7 @@ const ar: Dict = {
   "footer.hours": "ساعات العمل",
   "footer.hoursValue": "الاثنين – السبت · 8:00 – 20:00",
   "footer.rights": "جميع الحقوق محفوظة.",
+  "footer.staff": "الموظفون",
   "wa.help": "تحتاج مساعدة؟ راسلنا على واتساب",
   "about.title": "عن BBM",
   "about.body":
