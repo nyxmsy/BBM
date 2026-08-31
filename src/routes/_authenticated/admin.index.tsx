@@ -5,12 +5,21 @@ import { listOrders, updateOrderStatus, type OrderStatus } from "@/lib/orders.fu
 import { auth } from "@/lib/auth";
 import { formatSSP } from "@/lib/format";
 import { Loader2 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: OrdersAdmin,
 });
 
 const STATUSES: OrderStatus[] = ["new", "confirmed", "out_for_delivery", "delivered", "cancelled"];
+
+const statusLabels: Record<OrderStatus, string> = {
+  new: "admin.new",
+  confirmed: "admin.confirmed",
+  out_for_delivery: "admin.out_for_delivery",
+  delivered: "admin.delivered",
+  cancelled: "admin.cancelled",
+};
 
 const tone: Record<string, string> = {
   new: "bg-accent text-accent-foreground",
@@ -21,6 +30,7 @@ const tone: Record<string, string> = {
 };
 
 function OrdersAdmin() {
+  const { t, lang } = useI18n();
   const fetchOrders = useServerFn(listOrders);
   const setStatus = useServerFn(updateOrderStatus);
   const qc = useQueryClient();
@@ -55,15 +65,15 @@ function OrdersAdmin() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold sm:text-3xl">Orders</h1>
+      <h1 className="text-2xl font-bold sm:text-3xl">{t("admin.orderstitle")}</h1>
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Orders" value={String(orders.length)} />
-        <Stat label="New" value={String(orders.filter((o) => o.status === "new").length)} />
+        <Stat label={t("admin.orderstitle")} value={String(orders.length)} />
+        <Stat label={t("admin.new")} value={String(orders.filter((o) => o.status === "new").length)} />
         <Stat
-          label="Delivered"
+          label={t("admin.delivered")}
           value={String(orders.filter((o) => o.status === "delivered").length)}
         />
-        <Stat label="Revenue" value={formatSSP(revenue, "en")} />
+        <Stat label="Revenue" value={formatSSP(revenue, lang)} />
       </div>
 
       {orders.length === 0 ? (
@@ -134,7 +144,7 @@ function OrdersAdmin() {
                         : "bg-secondary hover:bg-secondary/70"
                     }`}
                   >
-                    {s}
+                    {t(statusLabels[s])}
                   </button>
                 ))}
               </div>

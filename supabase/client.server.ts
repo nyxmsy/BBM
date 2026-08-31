@@ -3,38 +3,29 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // SERVER-ONLY FILE. Never import this from client components.
 
 function getSupabaseUrl(): string {
-  const url =
+  return (
     process.env.SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL);
-
-  if (!url) {
-    throw new Error("Missing SUPABASE_URL environment variable.");
-  }
-  return url;
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) ||
+    "https://kwvsvxahejllixzwwxeb.supabase.co"
+  );
 }
 
 function getSupabaseAnonKey(): string {
-  const anonKey =
+  return (
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY);
-
-  if (!anonKey) {
-    throw new Error("Missing SUPABASE_ANON_KEY environment variable.");
-  }
-  return anonKey;
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+    ""
+  );
 }
 
 function getSupabaseServiceRoleKey(): string {
-  const serviceKey =
+  return (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.SUPABASE_SERVICE_ROLE_KEY);
-
-  if (!serviceKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable.");
-  }
-  return serviceKey;
+    (typeof import.meta !== "undefined" && import.meta.env?.SUPABASE_SERVICE_ROLE_KEY) ||
+    ""
+  );
 }
 
 /** Anonymous server-side client — for public reads (product catalog, checkout). */
@@ -61,7 +52,11 @@ export function getUserScopedServerClient(accessToken: string | undefined | null
 
 /** Service-role client for privileged operations. */
 export function getServiceRoleClient(): SupabaseClient {
-  return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
+  const serviceKey = getSupabaseServiceRoleKey();
+  if (!serviceKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY server env var.");
+  }
+  return createClient(getSupabaseUrl(), serviceKey, {
     auth: { persistSession: false },
   });
 }

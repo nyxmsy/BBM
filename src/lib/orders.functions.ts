@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
   getAnonServerClient,
-  getServiceRoleClient,
   getUserScopedServerClient,
 } from "../../supabase/client.server";
 
@@ -54,98 +53,49 @@ const placeOrderSchema = z.object({
   area: z.string().max(120).optional(),
   city: z.string().max(120).optional(),
   notes: z.string().max(1000).optional(),
-  payment: z.enum(["cod", "mpesa", "pickup"]).default("cod"),
-  txid: z.string().max(80).optional(),
+  payment: z.enum(["cod", "pickup"]).default("cod"),
 });
 
 export const placeOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => placeOrderSchema.parse(d))
   .handler(async ({ data }) => {
-    const serviceClient = getServiceRoleClient();
+    // Use anon client to call the secure create_cod_order function
+    const anonClient = getAnonServerClient();
 
-    const slugs = [...new Set(data.items.map((i) => i.slug))];
-    const { data: productRows, error: lookupError } = await serviceClient
-      .from("products")
-      .select("id, slug, name_en, name_ar, price, is_active")
-      .in("slug", slugs);
-
-    if (lookupError || !productRows || productRows.length === 0) {
-      throw new Error("No valid items in order");
-    }
-
-    const orderNumber =
-      "BBM-" +
-      Date.now().toString(36).toUpperCase().slice(-6) +
-      Math.floor(Math.random() * 90 + 10);
-
-    const deliveryFee = data.payment === "pickup" ? 0 : 3000;
-
-    const items = data.items
-      .map((it) => {
-        const prod = productRows.find((p) => p.slug === it.slug);
-        if (!prod) return null;
-        return {
-          product_id: prod.id,
-          product_slug: prod.slug,
-          name_en: prod.name_en,
-          name_ar: prod.name_ar,
-          quantity: it.qty,
-          unit_price: Number(prod.price),
-          total_price: Number(prod.price) * it.qty,
-        };
-      })
-      .filter((it): it is NonNullable<typeof it> => it !== null);
-
-    if (items.length === 0) {
-      throw new Error("No valid items in order");
-    }
-
-    const subtotal = items.reduce((sum, it) => sum + it.total_price, 0);
-    const total = subtotal + deliveryFee;
-
-    const { data: order, error: orderError } = await serviceClient
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_name: data.customerName,
-        customer_phone: data.phone,
-        customer_alt_phone: data.phone2 || null,
-        address: data.payment === "pickup" ? null : data.address || null,
-        area: data.payment === "pickup" ? null : data.area || null,
-        city: data.city || "Juba",
-        delivery_notes: data.notes || null,
-        payment_method: data.payment,
-        subtotal,
-        delivery_fee: deliveryFee,
-        total,
-        status: "new",
-      })
-      .select("id, order_number, total, subtotal, delivery_fee")
-      .single();
-
-    if (orderError || !order) {
-      throw new Error(`Failed to create order: ${orderError?.message}`);
-    }
-
-    const orderItemsRows = items.map((it) => ({
-      order_id: order.id,
-      product_id: it.product_id,
-      quantity: it.quantity,
-      unit_price: it.unit_price,
-      total_price: it.total_price,
+    // Prepare items as JSONB for the PostgreSQL function
+    const itemsJson = data.items.map((it) => ({
+      slug: it.slug,
+      qty: it.qty,
     }));
 
-    const { error: itemsError } = await serviceClient.from("order_items").insert(orderItemsRows);
+    // Call the secure database function
+    const { data: result, error } = await anonClient.rpc("create_cod_order", {
+      p_customer_name: data.customerName,
+      p_customer_phone: data.phone,
+      p_customer_alt_phone: data.phone2 || null,
+      p_address: data.payment === "pickup" ? null : data.address || null,
+      p_area: data.payment === "pickup" ? null : data.area || null,
+      p_city: data.city || "Juba",
+      p_delivery_notes: data.notes || null,
+      p_payment_method: data.payment,
+      p_mpesa_txid: data.txid || null,
+      p_items: itemsJson,
+    });
 
-    if (itemsError) {
-      throw new Error(`Failed to save order items: ${itemsError.message}`);
+    if (error) {
+      console.error("create_cod_order error:", error);
+      throw new Error(error.message || "Failed to create order");
+    }
+
+    if (!result || !result.success) {
+      throw new Error("Order creation failed");
     }
 
     return {
-      orderNumber: order.order_number as string,
-      subtotal: Number(order.subtotal),
-      deliveryFee: Number(order.delivery_fee),
-      total: Number(order.total),
+      orderNumber: result.order_number as string,
+      subtotal: Number(result.subtotal),
+      deliveryFee: Number(result.delivery_fee),
+      total: Number(result.total),
     };
   });
 
@@ -210,11 +160,59 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const supabase = getUserScopedServerClient(data.accessToken);
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: data.status, updated_at: new Date().toISOString() })
-      .eq("id", data.id);
+    
+    // Call the secure database function that handles authorization and inventory restoration
+    const { data: result, error } = await supabase.rpc("update_order_status", {
+      p_order_id: data.id,
+      p_new_status: data.status,
+    });
 
-    if (error) throw new Error(`Failed to update order: ${error.message}`);
-    return { ok: true, status: data.status };
+    if (error) {
+      console.error("update_order_status error:", error);
+      throw new Error(`Failed to update order: ${error.message}`);
+    }
+
+    if (!result || !result.success) {
+      throw new Error("Order status update failed");
+    }
+
+    return { ok: true, status: data.status, orderNumber: result.order_number };
+  });
+
+const adjustInventorySchema = z.object({
+  accessToken: z.string().min(1),
+  productId: z.string(),
+  quantityChange: z.number().int(),
+  reason: z.string().optional(),
+});
+
+export const adjustInventory = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => adjustInventorySchema.parse(d))
+  .handler(async ({ data }) => {
+    const supabase = getUserScopedServerClient(data.accessToken);
+    
+    // Call the secure database function
+    const { data: result, error } = await supabase.rpc("adjust_inventory", {
+      p_product_id: data.productId,
+      p_quantity_change: data.quantityChange,
+      p_reason: data.reason || "Manual adjustment",
+    });
+
+    if (error) {
+      console.error("adjust_inventory error:", error);
+      throw new Error(`Failed to adjust inventory: ${error.message}`);
+    }
+
+    if (!result || !result.success) {
+      throw new Error("Inventory adjustment failed");
+    }
+
+    return {
+      success: true,
+      productId: result.product_id,
+      productSlug: result.product_slug,
+      previousStock: Number(result.previous_stock),
+      newStock: Number(result.new_stock),
+      quantityChange: Number(result.quantity_change),
+    };
   });

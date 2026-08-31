@@ -3,11 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { listAllProducts, saveProduct, deleteProduct } from "@/lib/admin.functions";
+import { adjustInventory } from "@/lib/orders.functions";
 import { auth } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/products";
 import { formatSSP } from "@/lib/format";
-import { Loader2, Plus, Trash2, Pencil, Upload, ImageOff } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, Upload, ImageOff, Package } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { useI18n, bilingual } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsAdmin,
@@ -55,6 +57,7 @@ const input =
   "w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30";
 
 function ProductsAdmin() {
+  const { t, lang } = useI18n();
   const fetchAll = useServerFn(listAllProducts);
   const save = useServerFn(saveProduct);
   const del = useServerFn(deleteProduct);
@@ -132,25 +135,44 @@ function ProductsAdmin() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold sm:text-3xl">Products</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{t("admin.productstitle")}</h1>
         <button
           onClick={() => setDraft({ ...empty })}
           className="btn-tap inline-flex items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
         >
-          <Plus className="h-4 w-4" /> New product
+          <Plus className="h-4 w-4" /> {t("admin.newproduct")}
         </button>
       </div>
 
       {draft && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            saveMut.mutate(draft);
-          }}
-          className="mt-6 space-y-4 rounded-3xl border border-border/60 bg-card p-5"
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDraft(null)}
         >
+          <div 
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-border/60 bg-card p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">{draft.slug ? t("admin.edit") : t("admin.newproduct")}</h2>
+              <button
+                type="button"
+                onClick={() => setDraft(null)}
+                className="grid h-8 w-8 place-items-center rounded-full hover:bg-secondary"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveMut.mutate(draft);
+              }}
+              className="space-y-4"
+            >
           <div className="grid gap-3 sm:grid-cols-2">
-            <L label="Slug (url id)">
+            <L label={t("admin.slug")}>
               <input
                 className={input}
                 required
@@ -159,7 +181,7 @@ function ProductsAdmin() {
                 placeholder="ceramic-dinner-set"
               />
             </L>
-            <L label="Category">
+            <L label={t("admin.category")}>
               <select
                 className={input}
                 value={draft.category}
@@ -167,12 +189,12 @@ function ProductsAdmin() {
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.slug} value={c.slug}>
-                    {c.name.en}
+                    {bilingual(c.name, lang)}
                   </option>
                 ))}
               </select>
             </L>
-            <L label="Name (English)">
+            <L label={t("admin.name_en")}>
               <input
                 className={input}
                 required
@@ -180,7 +202,7 @@ function ProductsAdmin() {
                 onChange={(e) => set("name_en", e.target.value)}
               />
             </L>
-            <L label="Name (Arabic)">
+            <L label={t("admin.name_ar")}>
               <input
                 className={input}
                 required
@@ -189,7 +211,7 @@ function ProductsAdmin() {
                 onChange={(e) => set("name_ar", e.target.value)}
               />
             </L>
-            <L label="Description (English)">
+            <L label={t("admin.desc_en")}>
               <textarea
                 className={input}
                 rows={2}
@@ -197,7 +219,7 @@ function ProductsAdmin() {
                 onChange={(e) => set("desc_en", e.target.value)}
               />
             </L>
-            <L label="Description (Arabic)">
+            <L label={t("admin.desc_ar")}>
               <textarea
                 className={input}
                 rows={2}
@@ -206,7 +228,7 @@ function ProductsAdmin() {
                 onChange={(e) => set("desc_ar", e.target.value)}
               />
             </L>
-            <L label="Price (SSP)">
+            <L label={t("admin.price")}>
               <input
                 className={input}
                 type="number"
@@ -215,7 +237,7 @@ function ProductsAdmin() {
                 onChange={(e) => set("price", Number(e.target.value))}
               />
             </L>
-            <L label="Compare-at price (optional)">
+            <L label={t("admin.compare_at")}>
               <input
                 className={input}
                 type="number"
@@ -226,7 +248,7 @@ function ProductsAdmin() {
                 }
               />
             </L>
-            <L label="Stock">
+            <L label={t("admin.stock")}>
               <input
                 className={input}
                 type="number"
@@ -237,7 +259,7 @@ function ProductsAdmin() {
             </L>
             <div className="sm:col-span-2">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Product photo (required)
+                {t("admin.photo")}
               </span>
               <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-dashed border-border bg-secondary/30 p-4">
                 <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl bg-background">
@@ -299,7 +321,7 @@ function ProductsAdmin() {
             />
           </div>
           {!draft.image_url && (
-            <p className="text-sm text-muted-foreground">Add a product photo before saving.</p>
+            <p className="text-sm text-muted-foreground">{t("admin.add_photo")}</p>
           )}
           {saveMut.isError && (
             <p className="text-sm text-destructive">
@@ -312,17 +334,19 @@ function ProductsAdmin() {
               disabled={saveMut.isPending || uploading || !draft.image_url}
               className="btn-tap rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {saveMut.isPending ? "Saving…" : "Save product"}
+              {saveMut.isPending ? t("admin.saving") : t("admin.save")}
             </button>
             <button
               type="button"
               onClick={() => setDraft(null)}
               className="btn-tap rounded-full border border-border px-6 text-sm font-semibold"
             >
-              Cancel
+              {t("admin.cancel")}
             </button>
           </div>
         </form>
+          </div>
+        </div>
       )}
 
       <ul className="mt-6 space-y-3">
@@ -342,15 +366,15 @@ function ProductsAdmin() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate font-medium">{p.name_en}</div>
+              <div className="truncate font-medium">{lang === "ar" ? p.name_ar : p.name_en}</div>
               <div className="text-sm text-muted-foreground">
-                {formatSSP(p.price, "en")} ·{" "}
+                {formatSSP(p.price, lang)} ·{" "}
                 {p.stock === 0 ? (
-                  <span className="font-medium text-destructive">Sold out</span>
+                  <span className="font-medium text-destructive">{t("product.out")}</span>
                 ) : (
-                  `stock ${p.stock}`
+                  `${t("product.stock")} ${p.stock}`
                 )}{" "}
-                · {p.active ? "visible" : "hidden"}
+                · {p.active ? (lang === "ar" ? "مرئي" : "visible") : (lang === "ar" ? "مخفي" : "hidden")}
               </div>
             </div>
             <button
@@ -362,10 +386,10 @@ function ProductsAdmin() {
             </button>
             <button
               onClick={() => {
-                if (confirm(`Delete ${p.name_en}?`)) delMut.mutate(p.slug);
+                if (confirm(`${t("admin.delete")} ${lang === "ar" ? p.name_ar : p.name_en}?`)) delMut.mutate(p.slug);
               }}
               className="grid h-9 w-9 place-items-center rounded-full text-destructive hover:bg-destructive/10"
-              aria-label="Delete"
+              aria-label={t("admin.delete")}
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/checkout")({
   }),
 });
 
-type Payment = "cod" | "mpesa" | "pickup";
+type Payment = "cod" | "pickup";
 
 function Field({
   label,
@@ -73,7 +73,6 @@ function Checkout() {
     area: "",
     city: "Juba",
     notes: "",
-    txid: "",
   });
   const [err, setErr] = useState<string | null>(null);
 
@@ -101,13 +100,22 @@ function Checkout() {
           city: form.city || undefined,
           notes: form.notes || undefined,
           payment,
-          txid: form.txid || undefined,
         },
       });
       try {
         localStorage.setItem(
           "bbm.lastOrder",
-          JSON.stringify({ orderNumber: res.orderNumber, total: res.total, payment, form }),
+          JSON.stringify({ 
+            orderNumber: res.orderNumber, 
+            total: res.total, 
+            payment, 
+            form,
+            items: rows.map(r => ({
+              slug: r.item.slug,
+              qty: r.item.qty,
+              name: lang === "ar" ? r.product?.name_ar : r.product?.name_en
+            }))
+          }),
         );
       } catch (e) {
         void e;
@@ -135,6 +143,7 @@ function Checkout() {
     label: string;
     desc: string;
     icon: React.ComponentType<{ className?: string }>;
+    warning?: string;
   }[] = [
     {
       id: "cod",
@@ -142,12 +151,12 @@ function Checkout() {
       desc: lang === "ar" ? "ادفع نقدًا عند وصول الطلب." : "Pay when your order arrives.",
       icon: Truck,
     },
-    { id: "mpesa", label: t("checkout.mpesa"), desc: STORE.mpesaNumber, icon: Wallet },
     {
       id: "pickup",
       label: t("checkout.pickup"),
       desc: lang === "ar" ? STORE.address.ar : STORE.address.en,
       icon: Store,
+      warning: t("checkout.pickup_warning"),
     },
   ];
 
@@ -244,19 +253,13 @@ function Checkout() {
                     <div>
                       <div className="font-semibold">{o.label}</div>
                       <div className="text-sm text-muted-foreground">{o.desc}</div>
+                      {o.warning && (
+                        <div className="mt-2 text-xs text-amber-600">{o.warning}</div>
+                      )}
                     </div>
                   </label>
                 ))}
               </div>
-              {payment === "mpesa" && (
-                <div className="mt-4 rounded-2xl bg-accent/30 p-4 text-sm">
-                  <p className="mb-3">{t("checkout.mpesaNote")}</p>
-                  <div className="mb-3 font-display text-lg font-bold">{STORE.mpesaNumber}</div>
-                  <Field label={t("checkout.txid")}>
-                    <input className={inputCls} value={form.txid} onChange={update("txid")} />
-                  </Field>
-                </div>
-              )}
             </section>
 
             {err && <p className="text-sm text-destructive">{err}</p>}

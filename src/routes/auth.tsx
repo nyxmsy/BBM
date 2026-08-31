@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { auth } from "@/lib/auth";
 import { BbmLogo } from "@/components/BbmLogo";
 import { Loader2 } from "lucide-react";
+import { useI18n, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -25,6 +26,7 @@ const input =
 
 function AuthPage() {
   const nav = useNavigate();
+  const { lang, setLang, t, dir } = useI18n();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +34,21 @@ function AuthPage() {
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const langBtn = (l: Lang, label: string) => (
+    <button
+      key={l}
+      type="button"
+      onClick={() => setLang(l)}
+      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+        lang === l
+          ? "bg-foreground text-background font-semibold"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   useEffect(() => {
     auth.getSession().then(({ data }) => {
@@ -56,7 +73,7 @@ function AuthPage() {
           options: { data: { full_name: name } },
         });
         if (error) throw error;
-        setMsg("Account created successfully. You can now sign in.");
+        setMsg(t("staff.success"));
         setMode("signin");
       }
     } catch (e2) {
@@ -69,19 +86,25 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-7 shadow-sm">
-        <Link to="/" className="mb-6 inline-flex">
-          <BbmLogo />
-        </Link>
-        <h1 className="text-2xl font-bold">
-          {mode === "signin" ? "Staff sign in" : "Create staff account"}
+        <div className="flex items-center justify-between">
+          <Link to="/" className="inline-flex">
+            <BbmLogo />
+          </Link>
+          <div className="inline-flex items-center rounded-full border border-border/80 bg-card/80 p-0.5">
+            {langBtn("en", "EN")}
+            {langBtn("ar", "ع")}
+          </div>
+        </div>
+        <h1 className="mt-6 text-2xl font-bold">
+          {mode === "signin" ? t("staff.title") : t("staff.create")}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage products and customer orders.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("staff.subtitle")}</p>
 
-        <form onSubmit={submit} className="mt-6 space-y-3">
+        <form onSubmit={submit} className="mt-6 space-y-3" dir={dir}>
           {mode === "signup" && (
             <input
               className={input}
-              placeholder="Full name"
+              placeholder={t("staff.name")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
@@ -91,7 +114,7 @@ function AuthPage() {
             className={input}
             type="email"
             required
-            placeholder="Email"
+            placeholder={t("staff.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
@@ -101,7 +124,7 @@ function AuthPage() {
             type="password"
             required
             minLength={6}
-            placeholder="Password"
+            placeholder={t("staff.password")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
@@ -116,9 +139,9 @@ function AuthPage() {
             {busy ? (
               <Loader2 className="mx-auto h-5 w-5 animate-spin" />
             ) : mode === "signin" ? (
-              "Sign in"
+              t("staff.signin")
             ) : (
-              "Create account"
+              t("staff.signup")
             )}
           </button>
         </form>
@@ -130,7 +153,7 @@ function AuthPage() {
           }}
           className="mt-5 w-full text-sm text-muted-foreground hover:text-foreground"
         >
-          {mode === "signin" ? "No account yet? Create one" : "Already have an account? Sign in"}
+          {mode === "signin" ? t("staff.noaccount") : t("staff.haveaccount")}
         </button>
       </div>
     </main>

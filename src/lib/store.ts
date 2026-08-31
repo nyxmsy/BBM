@@ -5,14 +5,14 @@ export const STORE = {
     ar: "أدوات منزلية لكل عائلة في جوبا.",
   },
   address: {
-    en: "Munuki, Block B, Juba, South Sudan",
-    ar: "منوكي، بلوك ب، جوبا، جنوب السودان",
+    en: "Munuki Block B, Opposite St.Stephen Primary School, Juba, South Sudan",
+    ar: "منوكي بلوك ب، مقابل مدرسة القديس ستيفن الابتدائية، جوبا، جنوب السودان",
   },
-  phonePrimary: "+211 000 000 000",
-  phoneSecondary: "+211 000 000 000",
-  whatsapp: "+211 000 000 000",
+  phonePrimary: "+211 912 345 678", // Display format for UI
+  phoneSecondary: "+211 912 345 678",
+  whatsapp: "211912345678",          // Pure digits with country code (no + or spaces) for wa.me links
   email: "hello@bbm.ss",
-  mpesaNumber: "+211 000 000 000",
+  mpesaNumber: "+211 912 345 678",
   deliveryFeeJuba: 3000,
-  hours: { en: "Mon – Sat · 8:00 – 20:00", ar: "الاثنين – السبت · 8:00 – 20:00" },
+  hours: { en: "Sun – Friday · 6:00 – 20:00", ar: "الاثنين – السبت · 6:00 – 20:00" },
 };

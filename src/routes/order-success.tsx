@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { Layout } from "@/components/Layout";
 import { useI18n } from "@/lib/i18n";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { STORE } from "@/lib/store";
 import { WhatsAppIcon, whatsappHref } from "@/components/WhatsAppIcon";
+import { generateBusinessWhatsAppMessage, generateBusinessWhatsAppUrl } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/order-success")({
   validateSearch: z.object({ n: z.string().optional() }),
@@ -22,10 +23,64 @@ export const Route = createFileRoute("/order-success")({
 function Success() {
   const { n } = Route.useSearch();
   const { t, lang } = useI18n();
-  const wa = whatsappHref(
-    STORE.whatsapp,
-    (lang === "ar" ? "مرحبًا BBM، رقم طلبي: " : "Hello BBM, my order number is: ") + (n ?? ""),
-  );
+  
+  // Try to get order details from localStorage
+  let orderDetails: any = null;
+  try {
+    const stored = localStorage.getItem("bbm.lastOrder");
+    if (stored) {
+      orderDetails = JSON.parse(stored);
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+
+  // Build WhatsApp message with order details
+  let message = "";
+  if (lang === "ar") {
+    message = `مرحبًا BBM، رقم طلبي: ${n || ""}`;
+    if (orderDetails) {
+      message += `\n\nالمنتجات:`;
+      orderDetails.items?.forEach((item: any) => {
+        message += `\n- ${item.name || item.slug} × ${item.qty}`;
+      });
+      message += `\n\nالإجمالي: ${orderDetails.total || 0} SSP`;
+      message += `\nطريقة الدفع: ${orderDetails.payment === "pickup" ? "استلام من المتجر" : "الدفع عند الاستلام"}`;
+    }
+  } else {
+    message = `Hello BBM, my order number is: ${n || ""}`;
+    if (orderDetails) {
+      message += `\n\nProducts:`;
+      orderDetails.items?.forEach((item: any) => {
+        message += `\n- ${item.name || item.slug} × ${item.qty}`;
+      });
+      message += `\n\nTotal: ${orderDetails.total || 0} SSP`;
+      message += `\nPayment: ${orderDetails.payment === "pickup" ? "Store pickup" : "Cash on delivery"}`;
+    }
+  }
+
+  const wa = whatsappHref(STORE.whatsapp, message);
+  
+  // Generate business WhatsApp notification URL
+  let businessWa = "";
+  if (orderDetails) {
+    const businessMessage = generateBusinessWhatsAppMessage({
+      orderNumber: n || "",
+      customerName: orderDetails.form?.name || "",
+      customerPhone: orderDetails.form?.phone || "",
+      items: orderDetails.items || [],
+      subtotal: orderDetails.subtotal || 0,
+      deliveryFee: orderDetails.deliveryFee || 0,
+      total: orderDetails.total || 0,
+      paymentMethod: orderDetails.payment || "cod",
+      address: orderDetails.form?.address,
+      area: orderDetails.form?.area,
+      city: orderDetails.form?.city,
+      notes: orderDetails.form?.notes,
+    }, lang);
+    businessWa = generateBusinessWhatsAppUrl(STORE.whatsapp, businessMessage);
+  }
+
   return (
     <Layout>
       <section className="mx-auto max-w-xl px-4 py-20 text-center sm:px-6">
@@ -51,6 +106,16 @@ function Success() {
           >
             <WhatsAppIcon className="h-5 w-5" /> {t("success.whatsapp")}
           </a>
+          {businessWa && (
+            <a
+              href={businessWa}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-tap inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 text-sm font-semibold text-white hover:bg-[#1ebe5d]"
+            >
+              <MessageCircle className="h-5 w-5" /> {lang === "ar" ? "إرسال للبائع" : "Send to seller"}
+            </a>
+          )}
           <Link
             to="/"
             className="btn-tap inline-flex items-center justify-center rounded-full border border-border bg-card px-6 text-sm font-semibold"

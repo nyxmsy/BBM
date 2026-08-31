@@ -222,6 +222,49 @@ export const saveProduct = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getInventoryDashboard = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const supabase = getUserScopedServerClient(data.accessToken);
+      
+      // Try to use the inventory_dashboard view first
+      const { data: rows, error } = await supabase
+        .from("inventory_dashboard")
+        .select("*")
+        .order("name_en", { ascending: true });
+
+      if (!error && rows && rows.length > 0) {
+        return rows as any[];
+      }
+      
+      // Fallback to products table if view doesn't exist or returns no data
+      const { data: products, error: productsError } = await supabase
+        .from("products")
+        .select("id, slug, name_en, name_ar, stock, price, category, is_active")
+        .order("name_en", { ascending: true });
+
+      if (productsError) throw productsError;
+      
+      // Transform products to match inventory dashboard format
+      return (products as any[]).map(p => ({
+        id: p.id,
+        slug: p.slug,
+        name_en: p.name_en,
+        name_ar: p.name_ar,
+        stock: p.stock,
+        price: p.price,
+        category: p.category,
+        is_active: p.is_active,
+        total_sold: 0,
+        total_restored: 0,
+        order_count: 0,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
 export const deleteProduct = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({ accessToken: z.string().min(1), slug: z.string().min(1) }).parse(d),
