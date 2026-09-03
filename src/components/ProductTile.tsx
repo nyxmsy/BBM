@@ -6,9 +6,11 @@ import { CategoryIcon } from "./CategoryIcon";
 export function ProductVisual({
   product,
   className = "",
+  fit = "cover",
 }: {
   product: Product;
   className?: string;
+  fit?: "cover" | "contain";
 }) {
   return (
     <div
@@ -22,7 +24,7 @@ export function ProductVisual({
           src={product.imageUrl}
           alt=""
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
+          className={`absolute inset-0 h-full w-full object-${fit}`}
         />
       ) : (
         <CategoryIcon

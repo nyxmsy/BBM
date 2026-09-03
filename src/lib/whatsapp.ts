@@ -27,34 +27,37 @@ export interface OrderNotificationData {
 /**
  * Generate WhatsApp message for business notification
  */
-export function generateBusinessWhatsAppMessage(data: OrderNotificationData, lang: string = "en"): string {
+export function generateBusinessWhatsAppMessage(
+  data: OrderNotificationData,
+  lang: string = "en",
+): string {
   const isAr = lang === "ar";
-  
+
   let message = "";
-  
+
   if (isAr) {
     message = `🛒 *طلب جديد*\n\n`;
     message += `رقم الطلب: ${data.orderNumber}\n`;
     message += `العميل: ${data.customerName}\n`;
     message += `الهاتف: ${data.customerPhone}\n`;
-    
+
     if (data.address) {
       message += `العنوان: ${data.address}`;
       if (data.area) message += `, ${data.area}`;
       if (data.city) message += `, ${data.city}`;
       message += `\n`;
     }
-    
+
     message += `\nالمنتجات:\n`;
     data.items.forEach((item, index) => {
       message += `${index + 1}. ${item.name} × ${item.qty} = ${item.lineTotal} SSP\n`;
     });
-    
+
     message += `\nالمجموع الفرعي: ${data.subtotal} SSP\n`;
     message += `التوصيل: ${data.deliveryFee} SSP\n`;
     message += `*الإجمالي: ${data.total} SSP*\n`;
     message += `طريقة الدفع: ${data.paymentMethod === "pickup" ? "استلام من المتجر" : "الدفع عند الاستلام"}\n`;
-    
+
     if (data.notes) {
       message += `\nملاحظات: ${data.notes}\n`;
     }
@@ -63,29 +66,29 @@ export function generateBusinessWhatsAppMessage(data: OrderNotificationData, lan
     message += `Order Number: ${data.orderNumber}\n`;
     message += `Customer: ${data.customerName}\n`;
     message += `Phone: ${data.customerPhone}\n`;
-    
+
     if (data.address) {
       message += `Address: ${data.address}`;
       if (data.area) message += `, ${data.area}`;
       if (data.city) message += `, ${data.city}`;
       message += `\n`;
     }
-    
+
     message += `\nProducts:\n`;
     data.items.forEach((item, index) => {
       message += `${index + 1}. ${item.name} × ${item.qty} = ${item.lineTotal} SSP\n`;
     });
-    
+
     message += `\nSubtotal: ${data.subtotal} SSP\n`;
     message += `Delivery: ${data.deliveryFee} SSP\n`;
     message += `*Total: ${data.total} SSP*\n`;
     message += `Payment: ${data.paymentMethod === "pickup" ? "Store pickup" : "Cash on delivery"}\n`;
-    
+
     if (data.notes) {
       message += `\nNotes: ${data.notes}\n`;
     }
   }
-  
+
   return message;
 }
 
@@ -102,7 +105,11 @@ export function generateBusinessWhatsAppUrl(phoneNumber: string, message: string
  * Send order notification via WhatsApp (client-side redirect)
  * This is called after successful order placement
  */
-export function sendOrderNotificationWhatsApp(data: OrderNotificationData, phoneNumber: string, lang: string = "en"): string {
+export function sendOrderNotificationWhatsApp(
+  data: OrderNotificationData,
+  phoneNumber: string,
+  lang: string = "en",
+): string {
   const message = generateBusinessWhatsAppMessage(data, lang);
   return generateBusinessWhatsAppUrl(phoneNumber, message);
 }

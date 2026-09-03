@@ -7,6 +7,7 @@ import {
   Heart,
   Info,
   Phone,
+  User,
   X,
   Search,
   ChevronRight,
@@ -217,6 +218,28 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
               <Info className="h-4 w-4 shrink-0 text-cyan-500" />
               <span>{t("nav.about")}</span>
             </Link>
+
+            <Link
+              to="/contact"
+              onClick={onClose}
+              activeProps={{ className: "bg-primary/10 text-primary font-semibold" }}
+              inactiveProps={{ className: "text-foreground hover:bg-secondary/60" }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
+            >
+              <Phone className="h-4 w-4 shrink-0 text-orange-500" />
+              <span>{t("nav.contact")}</span>
+            </Link>
+
+            <Link
+              to="/account"
+              onClick={onClose}
+              activeProps={{ className: "bg-primary/10 text-primary font-semibold" }}
+              inactiveProps={{ className: "text-foreground hover:bg-secondary/60" }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
+            >
+              <User className="h-4 w-4 shrink-0 text-primary" />
+              <span>{t("nav.account")}</span>
+            </Link>
           </nav>
 
           {/* Departments / Categories */}
@@ -243,7 +266,10 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
                   className="flex items-center justify-between rounded-xl border border-border/50 bg-secondary/30 px-2.5 py-2 text-xs font-medium text-foreground hover:bg-secondary transition active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <CategoryIcon slug={c.slug} className="h-3.5 w-3.5 shrink-0 text-foreground/70" />
+                    <CategoryIcon
+                      slug={c.slug}
+                      className="h-3.5 w-3.5 shrink-0 text-foreground/70"
+                    />
                     <span className="truncate">{lang === "ar" ? c.name.ar : c.name.en}</span>
                   </div>
                   <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60 rtl:rotate-180" />

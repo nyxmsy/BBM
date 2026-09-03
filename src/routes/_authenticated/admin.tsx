@@ -4,7 +4,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, claimFirstAdmin } from "@/lib/admin.functions";
 import { auth } from "@/lib/auth";
 import { BbmLogo } from "@/components/BbmLogo";
-import { LogOut, Package, ShoppingBag, Loader2, Warehouse, Menu, X } from "lucide-react";
+import {
+  LogOut,
+  Package,
+  ShoppingBag,
+  Loader2,
+  Warehouse,
+  Menu,
+  X,
+  Settings as SettingsIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 
@@ -111,9 +120,7 @@ function AdminLayout() {
       <div className="grid min-h-screen place-items-center px-4">
         <div className="max-w-md rounded-3xl border border-border/60 bg-card p-7 text-center">
           <h1 className="text-xl font-bold">{t("admin.dashboard")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("admin.noaccess")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("admin.noaccess")}</p>
 
           {accessError && (
             <p className="mt-3 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
@@ -137,9 +144,7 @@ function AdminLayout() {
           </button>
 
           {claimMut.data?.granted === false && (
-            <p className="mt-3 text-sm text-destructive">
-              {t("admin.noaccess")}
-            </p>
+            <p className="mt-3 text-sm text-destructive">{t("admin.noaccess")}</p>
           )}
 
           <button
@@ -161,7 +166,7 @@ function AdminLayout() {
           <Link to="/">
             <BbmLogo />
           </Link>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden sm:flex items-center gap-1">
             <Link
@@ -185,6 +190,13 @@ function AdminLayout() {
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
             >
               <Warehouse className="h-4 w-4" /> {t("admin.inventory")}
+            </Link>
+            <Link
+              to="/admin/settings"
+              activeProps={{ className: "bg-foreground text-background" }}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
+            >
+              <SettingsIcon className="h-4 w-4" /> {t("admin.settings")}
             </Link>
             <div className="inline-flex items-center rounded-full border border-border/80 bg-card/80 p-0.5 ms-2">
               {langBtn("en", "EN")}
@@ -238,6 +250,14 @@ function AdminLayout() {
               onClick={() => setMobileMenuOpen(false)}
             >
               <Warehouse className="h-4 w-4" /> {t("admin.inventory")}
+            </Link>
+            <Link
+              to="/admin/settings"
+              activeProps={{ className: "bg-foreground text-background" }}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <SettingsIcon className="h-4 w-4" /> {t("admin.settings")}
             </Link>
             <div className="flex items-center justify-between rounded-xl border border-border/80 bg-secondary/30 px-4 py-3">
               <span className="text-sm font-medium">{t("admin.language")}</span>

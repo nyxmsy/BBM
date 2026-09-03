@@ -27,8 +27,7 @@ function CartPage() {
 
   const rows = items.map((i) => ({ item: i, product: get(i.slug) })).filter((r) => r.product);
   const subtotal = rows.reduce((s, r) => s + r.product!.price * r.item.qty, 0);
-  const delivery = rows.length > 0 ? STORE.deliveryFeeJuba : 0;
-  const total = subtotal + delivery;
+  const total = subtotal;
 
   if (rows.length === 0) {
     return (
@@ -120,13 +119,18 @@ function CartPage() {
               </div>
               <div className="flex justify-between">
                 <dt>{t("cart.delivery")}</dt>
-                <dd>{formatSSP(delivery, lang)}</dd>
+                <dd className="text-muted-foreground">—</dd>
               </div>
             </dl>
             <div className="mt-4 flex justify-between border-t border-border pt-4">
               <span className="text-base font-semibold">{t("cart.total")}</span>
               <span className="font-display text-xl font-bold">{formatSSP(total, lang)}</span>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "يتم احتساب رسوم التوصيل عند اختيار المنطقة في صفحة الدفع."
+                : "Delivery fee is set when you choose an area at checkout."}
+            </p>
             <Link
               to="/checkout"
               className="btn-tap mt-6 flex items-center justify-center gap-2 rounded-full bg-primary text-base font-semibold text-primary-foreground"

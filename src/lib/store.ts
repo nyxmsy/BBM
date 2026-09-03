@@ -10,7 +10,7 @@ export const STORE = {
   },
   phonePrimary: "+211 912 345 678", // Display format for UI
   phoneSecondary: "+211 912 345 678",
-  whatsapp: "211912345678",          // Pure digits with country code (no + or spaces) for wa.me links
+  whatsapp: "254717393085", // Pure digits with country code (no + or spaces) for wa.me links
   email: "hello@bbm.ss",
   mpesaNumber: "+211 912 345 678",
   deliveryFeeJuba: 3000,

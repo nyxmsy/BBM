@@ -51,8 +51,10 @@ function AuthPage() {
   );
 
   useEffect(() => {
-    auth.getSession().then(({ data }) => {
-      if (data.session) nav({ to: "/admin" });
+    auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      const roles = await auth.getMyRoles();
+      nav({ to: roles.isStaff ? "/admin" : "/account" });
     });
   }, [nav]);
 
@@ -65,7 +67,8 @@ function AuthPage() {
       if (mode === "signin") {
         const { error } = await auth.signInWithPassword({ email, password });
         if (error) throw error;
-        nav({ to: "/admin" });
+        const roles = await auth.getMyRoles();
+        nav({ to: roles.isStaff ? "/admin" : "/account" });
       } else {
         const { error } = await auth.signUp({
           email,

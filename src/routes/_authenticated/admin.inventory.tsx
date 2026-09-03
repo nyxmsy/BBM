@@ -42,7 +42,7 @@ function InventoryAdmin() {
       const { data: sessionData } = await auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("No active session");
-      
+
       const rows = await inventoryFn({ data: { accessToken: token } });
       return rows as InventoryRow[];
     },
@@ -54,7 +54,7 @@ function InventoryAdmin() {
       const { data: sessionData } = await auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("No active session");
-      
+
       const result = await adjustFn({
         data: {
           accessToken: token,
@@ -76,7 +76,11 @@ function InventoryAdmin() {
   if (isLoading)
     return <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-muted-foreground" />;
   if (error)
-    return <p className="text-sm text-destructive">{t("admin.inventory")}: {error.message}</p>;
+    return (
+      <p className="text-sm text-destructive">
+        {t("admin.inventory")}: {error.message}
+      </p>
+    );
 
   const inventory = data ?? [];
   const totalStock = inventory.reduce((sum, item) => sum + item.stock, 0);
@@ -87,14 +91,31 @@ function InventoryAdmin() {
     <div>
       <h1 className="text-2xl font-bold sm:text-3xl">{t("admin.inventorytitle")}</h1>
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label={t("admin.totalproducts")} value={String(inventory.length)} icon={<Package className="h-4 w-4" />} />
-        <Stat label={t("admin.totalstock")} value={String(totalStock)} icon={<Package className="h-4 w-4" />} />
-        <Stat label={t("admin.itemssold")} value={String(totalSold)} icon={<TrendingUp className="h-4 w-4" />} />
-        <Stat label={t("admin.lowstock")} value={String(lowStock.length)} icon={<TrendingDown className="h-4 w-4" />} warning={lowStock.length > 0} />
+        <Stat
+          label={t("admin.totalproducts")}
+          value={String(inventory.length)}
+          icon={<Package className="h-4 w-4" />}
+        />
+        <Stat
+          label={t("admin.totalstock")}
+          value={String(totalStock)}
+          icon={<Package className="h-4 w-4" />}
+        />
+        <Stat
+          label={t("admin.itemssold")}
+          value={String(totalSold)}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <Stat
+          label={t("admin.lowstock")}
+          value={String(lowStock.length)}
+          icon={<TrendingDown className="h-4 w-4" />}
+          warning={lowStock.length > 0}
+        />
       </div>
 
       {inventory.length === 0 ? (
-        <p className="mt-10 text-muted-foreground">{lang === "ar" ? "لا توجد بيانات مخزون." : "No inventory data available."}</p>
+        <p className="mt-10 text-muted-foreground">{t("admin.noinventory")}</p>
       ) : (
         <>
           {lowStock.length > 0 && (
@@ -110,38 +131,42 @@ function InventoryAdmin() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-secondary/30">
-                  <th className="px-4 py-3 text-left font-semibold">Product</th>
-                  <th className="px-4 py-3 text-right font-semibold">Stock</th>
-                  <th className="px-4 py-3 text-right font-semibold">Price</th>
-                  <th className="px-4 py-3 text-right font-semibold">Sold</th>
-                  <th className="px-4 py-3 text-right font-semibold">Orders</th>
-                  <th className="px-4 py-3 text-center font-semibold">Actions</th>
+                  <th className="px-4 py-3 text-start font-semibold">{t("admin.col.product")}</th>
+                  <th className="px-4 py-3 text-end font-semibold">{t("admin.stock")}</th>
+                  <th className="px-4 py-3 text-end font-semibold">{t("admin.col.price")}</th>
+                  <th className="px-4 py-3 text-end font-semibold">{t("admin.col.sold")}</th>
+                  <th className="px-4 py-3 text-end font-semibold">{t("admin.col.orders")}</th>
+                  <th className="px-4 py-3 text-center font-semibold">{t("admin.col.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {inventory.map((item) => (
                   <tr key={item.id} className="border-b border-border/30 last:border-0">
                     <td className="px-4 py-3">
-                      <div className="font-medium">{item.name_en}</div>
+                      <div className="font-medium">
+                        {bilingual({ en: item.name_en, ar: item.name_ar || item.name_en }, lang)}
+                      </div>
                       <div className="text-xs text-muted-foreground">{item.slug}</div>
                       {!item.is_active && (
                         <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs">
-                          Inactive
+                          {t("admin.inactive")}
                         </span>
                       )}
                     </td>
-                    <td className={`px-4 py-3 text-right font-display font-semibold ${item.stock < 5 ? "text-amber-600" : ""}`}>
+                    <td
+                      className={`px-4 py-3 text-end font-display font-semibold ${item.stock < 5 ? "text-amber-600" : ""}`}
+                    >
                       {item.stock}
                     </td>
-                    <td className="px-4 py-3 text-right">{formatSSP(item.price, "en")}</td>
-                    <td className="px-4 py-3 text-right">{Math.abs(item.total_sold)}</td>
-                    <td className="px-4 py-3 text-right">{item.order_count}</td>
+                    <td className="px-4 py-3 text-end">{formatSSP(item.price, lang)}</td>
+                    <td className="px-4 py-3 text-end">{Math.abs(item.total_sold)}</td>
+                    <td className="px-4 py-3 text-end">{item.order_count}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => setSelectedProduct(item)}
                         className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                       >
-                        Adjust
+                        {t("admin.adjust")}
                       </button>
                     </td>
                   </tr>
@@ -155,15 +180,27 @@ function InventoryAdmin() {
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6">
-            <h2 className="text-lg font-semibold">Adjust Stock</h2>
+            <h2 className="text-lg font-semibold">{t("admin.adjuststock")}</h2>
             <div className="mt-4 space-y-4">
               <div>
-                <div className="font-medium">{selectedProduct.name_en}</div>
-                <div className="text-sm text-muted-foreground">Current stock: {selectedProduct.stock}</div>
+                <div className="font-medium">
+                  {bilingual(
+                    {
+                      en: selectedProduct.name_en,
+                      ar: selectedProduct.name_ar || selectedProduct.name_en,
+                    },
+                    lang,
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t("admin.currentstock")}: {selectedProduct.stock}
+                </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Quantity Change</label>
+                <label className="mb-1.5 block text-sm font-medium">
+                  {t("admin.quantitychange")}
+                </label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -187,17 +224,17 @@ function InventoryAdmin() {
                   </button>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  New stock: {selectedProduct.stock + adjustment}
+                  {t("admin.newstock")}: {selectedProduct.stock + adjustment}
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Reason (optional)</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("admin.reason")}</label>
                 <input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g., Restock, Damaged goods, etc."
+                  placeholder={t("admin.reasonplaceholder")}
                   className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
@@ -208,7 +245,7 @@ function InventoryAdmin() {
                   disabled={adjustMut.isPending || adjustment === 0}
                   className="flex-1 rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                 >
-                  {adjustMut.isPending ? "Adjusting..." : "Confirm Adjustment"}
+                  {adjustMut.isPending ? t("admin.adjusting") : t("admin.confirm")}
                 </button>
                 <button
                   onClick={() => {
@@ -218,7 +255,7 @@ function InventoryAdmin() {
                   }}
                   className="flex-1 rounded-full border border-border py-2.5 text-sm font-semibold hover:bg-secondary"
                 >
-                  Cancel
+                  {t("admin.cancel")}
                 </button>
               </div>
             </div>
@@ -229,19 +266,21 @@ function InventoryAdmin() {
   );
 }
 
-function Stat({ 
-  label, 
-  value, 
-  icon, 
-  warning = false 
-}: { 
-  label: string; 
-  value: string; 
+function Stat({
+  label,
+  value,
+  icon,
+  warning = false,
+}: {
+  label: string;
+  value: string;
   icon?: React.ReactNode;
   warning?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border border-border/60 bg-card p-4 ${warning ? "border-amber-500/50 bg-amber-500/10" : ""}`}>
+    <div
+      className={`rounded-2xl border border-border/60 bg-card p-4 ${warning ? "border-amber-500/50 bg-amber-500/10" : ""}`}
+    >
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {icon}
         {label}

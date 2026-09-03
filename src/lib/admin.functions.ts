@@ -3,13 +3,20 @@ import { z } from "zod";
 import { getServiceRoleClient, getUserScopedServerClient } from "../../supabase/client.server";
 import type { ProductRow } from "@/lib/catalog.server";
 
+function parseWithDataOrDirect<T extends z.ZodTypeAny>(schema: T, d: unknown): z.infer<T> {
+  if (d && typeof d === "object" && "data" in d && (d as { data: unknown }).data !== undefined) {
+    return schema.parse((d as { data: unknown }).data);
+  }
+  return schema.parse(d);
+}
+
 type UserRoleRow = { role: "admin" | "staff" };
 
 const withAuthToken = z.object({ accessToken: z.string().min(1) });
 
 // Real admin/staff check using POST so JSON payloads are received reliably
 export const getMyAccess = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
@@ -38,7 +45,7 @@ export const getMyAccess = createServerFn({ method: "POST" })
 
 // First-admin bootstrap using service-role client
 export const claimFirstAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const callerClient = getUserScopedServerClient(data.accessToken);
@@ -108,6 +115,7 @@ export const productSchema = z.object({
   category: z.string().min(1).max(40),
   tint: z.string().max(60).default("oklch(0.92 0.03 75)"),
   image_url: z.string().nullable().optional(),
+  remove_photo: z.boolean().optional(),
   stock: z.number().int().min(0),
   featured: z.boolean().default(false),
   best_seller: z.boolean().default(false),
@@ -117,7 +125,7 @@ export const productSchema = z.object({
 });
 
 export const listAllProducts = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
@@ -129,6 +137,7 @@ export const listAllProducts = createServerFn({ method: "POST" })
       if (!error && rows && rows.length > 0) {
         const productRows = rows as unknown as (ProductRow & {
           product_images?: { image_url: string }[];
+          image_url: string | null;
         })[];
         return productRows.map((p) => ({
           slug: p.slug,
@@ -143,7 +152,7 @@ export const listAllProducts = createServerFn({ method: "POST" })
               : null,
           category: p.category,
           tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
-          image_url: p.product_images?.[0]?.image_url ?? null,
+          image_url: p.image_url,
           stock: p.stock,
           featured: p.is_featured,
           best_seller: p.is_best_seller,
@@ -167,9 +176,9 @@ export const listAllProducts = createServerFn({ method: "POST" })
         p.compare_at_price !== null && p.compare_at_price !== undefined
           ? Number(p.compare_at_price)
           : null,
-          category: p.category,
-          tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
-      image_url: null,
+      category: p.category,
+      tint: CATEGORY_TINT[p.category] ?? "oklch(0.92 0.03 75)",
+      image_url: p.image_url,
       stock: p.stock,
       featured: p.is_featured,
       best_seller: p.is_best_seller,
@@ -180,9 +189,11 @@ export const listAllProducts = createServerFn({ method: "POST" })
   });
 
 export const saveProduct = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => productSchema.parse(d))
+  .inputValidator((d: unknown) => parseWithDataOrDirect(productSchema, d))
   .handler(async ({ data }) => {
     const supabase = getUserScopedServerClient(data.accessToken);
+    const resolvedImageUrl = data.remove_photo ? null : (data.image_url ?? null);
+
     const { data: product, error } = await supabase
       .from("products")
       .upsert(
@@ -195,6 +206,7 @@ export const saveProduct = createServerFn({ method: "POST" })
           price: data.price,
           compare_at_price: data.compare_at ?? null,
           category: data.category,
+          image_url: resolvedImageUrl,
           stock: data.stock,
           is_featured: data.featured,
           is_best_seller: data.best_seller,
@@ -209,25 +221,28 @@ export const saveProduct = createServerFn({ method: "POST" })
 
     if (error) throw new Error(`Failed to save product: ${error.message}`);
 
-    if (data.image_url && product?.id) {
+    // Mirror the primary photo into product_images for old storefront code paths.
+    if (product?.id) {
       await supabase.from("product_images").delete().eq("product_id", product.id);
-      await supabase.from("product_images").insert({
-        product_id: product.id,
-        image_url: data.image_url,
-        sort_order: 0,
-        is_primary: true,
-      });
+      if (resolvedImageUrl) {
+        await supabase.from("product_images").insert({
+          product_id: product.id,
+          image_url: resolvedImageUrl,
+          sort_order: 0,
+          is_primary: true,
+        });
+      }
     }
 
     return { ok: true };
   });
 
 export const getInventoryDashboard = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => withAuthToken.parse(d))
+  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
-      
+
       // Try to use the inventory_dashboard view first
       const { data: rows, error } = await supabase
         .from("inventory_dashboard")
@@ -235,9 +250,9 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
         .order("name_en", { ascending: true });
 
       if (!error && rows && rows.length > 0) {
-        return rows as any[];
+        return rows as Record<string, unknown>[];
       }
-      
+
       // Fallback to products table if view doesn't exist or returns no data
       const { data: products, error: productsError } = await supabase
         .from("products")
@@ -245,9 +260,9 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
         .order("name_en", { ascending: true });
 
       if (productsError) throw productsError;
-      
+
       // Transform products to match inventory dashboard format
-      return (products as any[]).map(p => ({
+      return (products as Record<string, unknown>[]).map((p) => ({
         id: p.id,
         slug: p.slug,
         name_en: p.name_en,
@@ -267,7 +282,7 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
 
 export const deleteProduct = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ accessToken: z.string().min(1), slug: z.string().min(1) }).parse(d),
+    parseWithDataOrDirect(z.object({ accessToken: z.string().min(1), slug: z.string().min(1) }), d),
   )
   .handler(async ({ data }) => {
     const supabase = getUserScopedServerClient(data.accessToken);
@@ -276,5 +291,188 @@ export const deleteProduct = createServerFn({ method: "POST" })
       .update({ is_active: false })
       .eq("slug", data.slug);
     if (error) throw new Error(`Failed to delete product: ${error.message}`);
+    return { ok: true };
+  });
+
+// ============================================================================
+// Delivery areas (staff CRUD + public read of active list)
+// ============================================================================
+
+const areaBaseSchema = z.object({
+  name_en: z.string().min(1).max(80),
+  name_ar: z.string().max(80).optional(),
+  fee: z.number().int().min(0),
+  active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export type DeliveryArea = {
+  id: string;
+  name_en: string;
+  name_ar: string | null;
+  fee: number;
+  active: boolean;
+  sort_order: number;
+};
+
+export const listDeliveryAreas = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const raw = d && typeof d === "object" && "data" in d ? (d as { data: unknown }).data : d;
+    const schema = z.object({
+      accessToken: z.string().min(1).optional(),
+      includeInactive: z.boolean().optional(),
+    });
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) return { accessToken: undefined, includeInactive: false };
+    return {
+      accessToken: parsed.data.accessToken,
+      includeInactive: parsed.data.includeInactive ?? false,
+    };
+  })
+  .handler(async ({ data }) => {
+    const client = data.accessToken
+      ? getUserScopedServerClient(data.accessToken)
+      : getServiceRoleClient();
+    let q = client
+      .from("delivery_areas")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name_en", { ascending: true });
+
+    if (!data.accessToken || !data.includeInactive) {
+      q = q.eq("active", true);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as DeliveryArea[];
+  });
+
+export const saveDeliveryArea = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    parseWithDataOrDirect(
+      z.object({
+        accessToken: z.string().min(1),
+        id: z.string().uuid().optional(),
+        name_en: z.string().min(1).max(80),
+        name_ar: z.string().max(80).optional(),
+        fee: z.number().int().min(0),
+        active: z.boolean().default(true),
+        sort_order: z.number().int().default(0),
+      }),
+      d,
+    ),
+  )
+  .handler(async ({ data }) => {
+    const supabase = getUserScopedServerClient(data.accessToken);
+    const payload = {
+      name_en: data.name_en,
+      name_ar: data.name_ar ?? null,
+      fee: data.fee,
+      active: data.active,
+      sort_order: data.sort_order,
+      updated_at: new Date().toISOString(),
+    };
+    let result;
+    if (data.id) {
+      result = await supabase
+        .from("delivery_areas")
+        .update(payload)
+        .eq("id", data.id)
+        .select("*")
+        .single();
+    } else {
+      result = await supabase.from("delivery_areas").insert(payload).select("*").single();
+    }
+    if (result.error) throw new Error(result.error.message);
+    return { ok: true, area: result.data as DeliveryArea };
+  });
+
+export const deleteDeliveryArea = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    parseWithDataOrDirect(z.object({ accessToken: z.string().min(1), id: z.string().uuid() }), d),
+  )
+  .handler(async ({ data }) => {
+    const supabase = getUserScopedServerClient(data.accessToken);
+    const { error } = await supabase.from("delivery_areas").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ============================================================================
+// Store settings
+// ============================================================================
+
+export type StoreSettings = {
+  id: number;
+  store_name_en: string;
+  store_name_ar: string;
+  address_en: string;
+  address_ar: string;
+  opening_hours_en: string;
+  opening_hours_ar: string;
+  phone: string;
+  whatsapp: string;
+  map_lat: number | null;
+  map_lng: number | null;
+  map_embed_url: string | null;
+  pickup_window_days: number;
+  updated_at: string;
+};
+
+export const getStoreSettings = createServerFn({ method: "POST" })
+  .inputValidator((_d: unknown) => undefined)
+  .handler(async () => {
+    const supabase = getServiceRoleClient();
+    const { data, error } = await supabase
+      .from("store_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) {
+      const seeded = await supabase.from("store_settings").insert({ id: 1 }).select("*").single();
+      if (seeded.error) throw new Error(seeded.error.message);
+      return seeded.data as StoreSettings;
+    }
+    return data as StoreSettings;
+  });
+
+const storeSettingsPayloadSchema = z.object({
+  accessToken: z.string().min(1),
+  store_name_en: z.string().max(120).min(1),
+  store_name_ar: z.string().max(120).default(""),
+  address_en: z.string().max(240).default(""),
+  address_ar: z.string().max(240).default(""),
+  opening_hours_en: z.string().max(240).default(""),
+  opening_hours_ar: z.string().max(240).default(""),
+  phone: z.string().max(60).default(""),
+  whatsapp: z.string().max(60).default(""),
+  map_lat: z.number().nullable().optional(),
+  map_lng: z.number().nullable().optional(),
+  map_embed_url: z.string().max(1000).nullable().optional(),
+  pickup_window_days: z.number().int().min(1).max(30),
+});
+
+export const saveStoreSettings = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => parseWithDataOrDirect(storeSettingsPayloadSchema, d))
+  .handler(async ({ data }) => {
+    const supabase = getUserScopedServerClient(data.accessToken);
+    const payload: Record<string, unknown> = {
+      store_name_en: data.store_name_en,
+      store_name_ar: data.store_name_ar,
+      address_en: data.address_en,
+      address_ar: data.address_ar,
+      opening_hours_en: data.opening_hours_en,
+      opening_hours_ar: data.opening_hours_ar,
+      phone: data.phone,
+      whatsapp: data.whatsapp,
+      map_lat: data.map_lat ?? null,
+      map_lng: data.map_lng ?? null,
+      map_embed_url: data.map_embed_url ?? null,
+      pickup_window_days: data.pickup_window_days,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("store_settings").upsert(payload, { onConflict: "id" });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

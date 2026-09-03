@@ -71,7 +71,7 @@ function ProductPage() {
         <div className="grid gap-10 md:grid-cols-2">
           <div>
             <div className="aspect-square overflow-hidden rounded-3xl">
-              <ProductVisual product={product} className="h-full w-full" />
+              <ProductVisual product={product} fit="contain" className="h-full w-full" />
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
               {[0, 1, 2, 3].map((i) => (
@@ -79,7 +79,7 @@ function ProductPage() {
                   key={i}
                   className="aspect-square overflow-hidden rounded-2xl border border-border/60"
                 >
-                  <ProductVisual product={product} className="h-full w-full" />
+                  <ProductVisual product={product} fit="cover" className="h-full w-full" />
                 </div>
               ))}
             </div>

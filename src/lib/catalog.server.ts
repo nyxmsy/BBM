@@ -26,6 +26,7 @@ export type ProductRow = {
   compare_at_price: number | string | null;
   stock: number;
   category: string;
+  image_url: string | null;
   is_featured: boolean;
   is_best_seller: boolean;
   is_new_arrival: boolean;
@@ -55,13 +56,8 @@ function toNumber(v: number | string | null | undefined): number {
 }
 
 export function mapProduct(r: ProductRow): Product {
-  const images = (r.product_images ?? [])
-    .slice()
-    .sort((a, b) => {
-      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
-      return a.sort_order - b.sort_order;
-    })
-    .map((img) => img.image_url);
+  const primaryImage = r.image_url || undefined;
+  const images = primaryImage ? [primaryImage] : [];
 
   return {
     slug: r.slug,
@@ -74,7 +70,7 @@ export function mapProduct(r: ProductRow): Product {
         : undefined,
     category: r.category as CategorySlug,
     tint: CATEGORY_TINT[r.category] ?? "oklch(0.92 0.03 75)",
-    imageUrl: images[0],
+    imageUrl: primaryImage,
     images,
     stock: r.stock,
     featured: r.is_featured,
@@ -96,6 +92,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 85000,
     compare_at_price: 105000,
     category: "kitchen",
+    image_url: null,
     stock: 12,
     is_featured: true,
     is_best_seller: true,
@@ -115,6 +112,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 28000,
     compare_at_price: null,
     category: "cookware",
+    image_url: null,
     stock: 20,
     is_featured: true,
     is_best_seller: false,
@@ -132,6 +130,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 65000,
     compare_at_price: null,
     category: "cookware",
+    image_url: null,
     stock: 8,
     is_featured: true,
     is_best_seller: false,
@@ -149,6 +148,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 42000,
     compare_at_price: null,
     category: "bags",
+    image_url: null,
     stock: 15,
     is_featured: true,
     is_best_seller: true,
@@ -166,6 +166,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 22000,
     compare_at_price: null,
     category: "bags",
+    image_url: null,
     stock: 30,
     is_featured: false,
     is_best_seller: false,
@@ -183,6 +184,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 18000,
     compare_at_price: null,
     category: "shoes",
+    image_url: null,
     stock: 22,
     is_featured: false,
     is_best_seller: false,
@@ -200,6 +202,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 35000,
     compare_at_price: null,
     category: "shoes",
+    image_url: null,
     stock: 14,
     is_featured: false,
     is_best_seller: true,
@@ -217,6 +220,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 6500,
     compare_at_price: null,
     category: "oils",
+    image_url: null,
     stock: 60,
     is_featured: true,
     is_best_seller: false,
@@ -234,6 +238,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 8500,
     compare_at_price: null,
     category: "lotions",
+    image_url: null,
     stock: 40,
     is_featured: false,
     is_best_seller: true,
@@ -251,6 +256,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 4500,
     compare_at_price: null,
     category: "cleaning",
+    image_url: null,
     stock: 80,
     is_featured: false,
     is_best_seller: false,
@@ -268,6 +274,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 32000,
     compare_at_price: null,
     category: "household",
+    image_url: null,
     stock: 10,
     is_featured: true,
     is_best_seller: false,
@@ -285,6 +292,7 @@ export const defaultProductRows: ProductRow[] = [
     price: 15000,
     compare_at_price: null,
     category: "household",
+    image_url: null,
     stock: 0,
     is_featured: false,
     is_best_seller: false,

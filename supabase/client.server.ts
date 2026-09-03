@@ -60,3 +60,12 @@ export function getServiceRoleClient(): SupabaseClient {
     auth: { persistSession: false },
   });
 }
+
+/** Service-role client, or null when the key is not configured. */
+export function tryGetServiceRoleClient(): SupabaseClient | null {
+  const serviceKey = getSupabaseServiceRoleKey();
+  if (!serviceKey) return null;
+  return createClient(getSupabaseUrl(), serviceKey, {
+    auth: { persistSession: false },
+  });
+}

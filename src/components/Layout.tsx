@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, Search, ShoppingBag, Heart, X, MapPin, Phone, Mail } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Menu, Search, ShoppingBag, Heart, X, MapPin, Phone, Mail, User } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { BbmLogo } from "./BbmLogo";
@@ -8,6 +8,8 @@ import { WhatsAppFab } from "./WhatsAppFab";
 import { MobileDrawer } from "./MobileDrawer";
 import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
 import { STORE } from "@/lib/store";
+import { LanguageHint } from "./LanguageHint";
+import { auth } from "@/lib/auth";
 
 const NAV: { key: string; to: string }[] = [
   { key: "nav.home", to: "/" },
@@ -35,9 +37,10 @@ function LangSwitch() {
     </button>
   );
   return (
-    <div className="inline-flex items-center rounded-full border border-border/80 bg-card/80 p-0.5">
+    <div className="relative inline-flex items-center rounded-full border border-border/80 bg-card/80 p-0.5">
       {btn("en", "EN")}
       {btn("ar", "ع")}
+      <LanguageHint />
     </div>
   );
 }
@@ -111,6 +114,25 @@ function CartBadge() {
   );
 }
 
+function AccountLink() {
+  const { t } = useI18n();
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
+  }, []);
+
+  return (
+    <Link
+      to="/account"
+      aria-label={t("nav.account")}
+      className="hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-secondary transition"
+    >
+      <User className={`h-5 w-5 ${signedIn ? "text-primary" : ""}`} />
+    </Link>
+  );
+}
+
 function Header() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -167,6 +189,8 @@ function Header() {
           >
             <Heart className="h-5 w-5" />
           </Link>
+
+          <AccountLink />
 
           <CartBadge />
 

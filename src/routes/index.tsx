@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, Sparkles, Store, Truck, MapPin, Phone, UtensilsCrossed } from "lucide-react";
+import {
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Truck,
+  MapPin,
+  Phone,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useI18n, bilingual } from "@/lib/i18n";
 import { CATEGORIES, type Product } from "@/lib/products";
