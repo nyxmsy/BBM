@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Layout } from "@/components/Layout";
 import { useI18n } from "@/lib/i18n";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { WhatsAppIcon, whatsappHref } from "@/components/WhatsAppIcon";
 
@@ -22,14 +22,15 @@ export const Route = createFileRoute("/contact")({
 
 function Contact() {
   const { t, lang } = useI18n();
+  const s = useStoreSettings();
   const items = [
     {
       icon: MapPin,
       label: t("contact.address"),
-      value: lang === "ar" ? STORE.address.ar : STORE.address.en,
+      value: lang === "ar" ? s.address_ar || s.address_en : s.address_en,
     },
-    { icon: Phone, label: t("contact.phone"), value: STORE.phonePrimary },
-    { icon: Mail, label: t("contact.email"), value: STORE.email },
+    { icon: Phone, label: t("contact.phone"), value: s.phone },
+    { icon: Mail, label: t("contact.email"), value: s.email },
   ];
   return (
     <Layout>
@@ -54,7 +55,7 @@ function Contact() {
           ))}
           <li>
             <a
-              href={whatsappHref(STORE.whatsapp)}
+              href={whatsappHref(s.whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-start gap-4 rounded-2xl border border-border/60 bg-card p-5 transition hover:border-[#25D366]/40 hover:shadow-sm"
@@ -66,7 +67,7 @@ function Contact() {
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">
                   {t("contact.whatsapp")}
                 </div>
-                <div className="mt-1 font-medium">{STORE.whatsapp}</div>
+                <div className="mt-1 font-medium">{s.whatsapp}</div>
               </div>
             </a>
           </li>

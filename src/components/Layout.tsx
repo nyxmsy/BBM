@@ -7,7 +7,7 @@ import { BbmLogo } from "./BbmLogo";
 import { WhatsAppFab } from "./WhatsAppFab";
 import { MobileDrawer } from "./MobileDrawer";
 import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import { LanguageHint } from "./LanguageHint";
 import { auth } from "@/lib/auth";
 
@@ -136,6 +136,7 @@ function AccountLink() {
 function Header() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const s = useStoreSettings();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/95 backdrop-blur-md">
@@ -173,7 +174,7 @@ function Header() {
           <SearchButton />
 
           <a
-            href={whatsappHref(STORE.whatsapp)}
+            href={whatsappHref(s.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t("wa.help")}
@@ -207,6 +208,9 @@ function Header() {
 
 function Footer() {
   const { t, lang } = useI18n();
+  const s = useStoreSettings();
+  const address = lang === "ar" ? s.address_ar || s.address_en : s.address_en;
+  const hours = lang === "ar" ? s.opening_hours_ar || s.opening_hours_en : s.opening_hours_en;
   return (
     <footer className="mt-24 border-t border-border/60 bg-secondary/30">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
@@ -242,15 +246,14 @@ function Footer() {
           </h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li className="flex items-start gap-2">
-              <MapPin className="mt-0.5 h-4 w-4 text-primary" />{" "}
-              {lang === "ar" ? STORE.address.ar : STORE.address.en}
+              <MapPin className="mt-0.5 h-4 w-4 text-primary" /> {address}
             </li>
             <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-primary" /> {STORE.phonePrimary}
+              <Phone className="h-4 w-4 text-primary" /> {s.phone}
             </li>
             <li>
               <a
-                href={whatsappHref(STORE.whatsapp)}
+                href={whatsappHref(s.whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:text-primary"
@@ -259,7 +262,7 @@ function Footer() {
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" /> {STORE.email}
+              <Mail className="h-4 w-4 text-primary" /> {s.email}
             </li>
           </ul>
         </div>
@@ -267,7 +270,7 @@ function Footer() {
           <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             {t("footer.hours")}
           </h4>
-          <p className="mt-3 text-sm">{lang === "ar" ? STORE.hours.ar : STORE.hours.en}</p>
+          <p className="mt-3 text-sm">{hours}</p>
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">

@@ -1,70 +1,8 @@
 import { useEffect, useState } from "react";
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { getAnonServerClient } from "../../supabase/client.server";
 import { MapPin, Clock, Phone, Store, X, Navigation } from "lucide-react";
 import { useI18n, bilingual } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
-
-export type StoreSettingsView = {
-  store_name_en: string;
-  store_name_ar: string;
-  address_en: string;
-  address_ar: string;
-  opening_hours_en: string;
-  opening_hours_ar: string;
-  phone: string;
-  whatsapp: string;
-  map_lat: number | null;
-  map_lng: number | null;
-  map_embed_url: string | null;
-};
-
-export const getStoreSettingsView = createServerFn({ method: "POST" })
-  .inputValidator((_d: unknown) => undefined)
-  .handler(async (): Promise<StoreSettingsView> => {
-    try {
-      const supabase = getAnonServerClient();
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select(
-          "store_name_en, store_name_ar, address_en, address_ar, opening_hours_en, opening_hours_ar, phone, whatsapp, map_lat, map_lng, map_embed_url",
-        )
-        .eq("id", 1)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) {
-        return {
-          store_name_en: "BBM Household Store",
-          store_name_ar: "مخازن بي بي إم للمنزل",
-          address_en: "Munuki Block B, Juba, South Sudan",
-          address_ar: "مونكي بلوك بي، جوبا، جنوب السودان",
-          opening_hours_en: "Mon–Sat: 8:00 AM – 8:00 PM · Sun: 10:00 AM – 6:00 PM",
-          opening_hours_ar: "السبت-الإثنين: 8 ص – 8 م · الأحد: 10 ص – 6 م",
-          phone: "+211 922 000 000",
-          whatsapp: "+211922000000",
-          map_lat: null,
-          map_lng: null,
-          map_embed_url: null,
-        };
-      }
-      return data as StoreSettingsView;
-    } catch {
-      return {
-        store_name_en: "BBM Household Store",
-        store_name_ar: "مخازن بي بي إم للمنزل",
-        address_en: "Munuki Block B, Juba, South Sudan",
-        address_ar: "مونكي بلوك بي، جوبا، جنوب السودان",
-        opening_hours_en: "Mon–Sat: 8:00 AM – 8:00 PM · Sun: 10:00 AM – 6:00 PM",
-        opening_hours_ar: "السبت-الإثنين: 8 ص – 8 م · الأحد: 10 ص – 6 م",
-        phone: "+211 922 000 000",
-        whatsapp: "+211922000000",
-        map_lat: null,
-        map_lng: null,
-        map_embed_url: null,
-      };
-    }
-  });
+import { getStoreSettingsView, type StoreSettingsView } from "@/lib/store-settings";
 
 export function PickupLocationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { lang } = useI18n();

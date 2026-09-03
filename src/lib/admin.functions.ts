@@ -16,7 +16,7 @@ const withAuthToken = z.object({ accessToken: z.string().min(1) });
 
 // Real admin/staff check using POST so JSON payloads are received reliably
 export const getMyAccess = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
+  .validator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
@@ -45,7 +45,7 @@ export const getMyAccess = createServerFn({ method: "POST" })
 
 // First-admin bootstrap using service-role client
 export const claimFirstAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
+  .validator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const callerClient = getUserScopedServerClient(data.accessToken);
@@ -125,7 +125,7 @@ export const productSchema = z.object({
 });
 
 export const listAllProducts = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
+  .validator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
@@ -189,7 +189,7 @@ export const listAllProducts = createServerFn({ method: "POST" })
   });
 
 export const saveProduct = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(productSchema, d))
+  .validator((d: unknown) => parseWithDataOrDirect(productSchema, d))
   .handler(async ({ data }) => {
     const supabase = getUserScopedServerClient(data.accessToken);
     const resolvedImageUrl = data.remove_photo ? null : (data.image_url ?? null);
@@ -238,7 +238,7 @@ export const saveProduct = createServerFn({ method: "POST" })
   });
 
 export const getInventoryDashboard = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
+  .validator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
@@ -250,7 +250,19 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
         .order("name_en", { ascending: true });
 
       if (!error && rows && rows.length > 0) {
-        return rows as Record<string, unknown>[];
+        return rows as Array<{
+          id: string;
+          slug: string;
+          name_en: string;
+          name_ar: string;
+          stock: number;
+          price: number;
+          category: string;
+          is_active: boolean;
+          total_sold: number;
+          total_restored: number;
+          order_count: number;
+        }>;
       }
 
       // Fallback to products table if view doesn't exist or returns no data
@@ -262,7 +274,16 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
       if (productsError) throw productsError;
 
       // Transform products to match inventory dashboard format
-      return (products as Record<string, unknown>[]).map((p) => ({
+      return (products as Array<{
+        id: string;
+        slug: string;
+        name_en: string;
+        name_ar: string;
+        stock: number;
+        price: number;
+        category: string;
+        is_active: boolean;
+      }>).map((p) => ({
         id: p.id,
         slug: p.slug,
         name_en: p.name_en,
@@ -281,7 +302,7 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
   });
 
 export const deleteProduct = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     parseWithDataOrDirect(z.object({ accessToken: z.string().min(1), slug: z.string().min(1) }), d),
   )
   .handler(async ({ data }) => {
@@ -298,14 +319,6 @@ export const deleteProduct = createServerFn({ method: "POST" })
 // Delivery areas (staff CRUD + public read of active list)
 // ============================================================================
 
-const areaBaseSchema = z.object({
-  name_en: z.string().min(1).max(80),
-  name_ar: z.string().max(80).optional(),
-  fee: z.number().int().min(0),
-  active: z.boolean().default(true),
-  sort_order: z.number().int().default(0),
-});
-
 export type DeliveryArea = {
   id: string;
   name_en: string;
@@ -316,7 +329,7 @@ export type DeliveryArea = {
 };
 
 export const listDeliveryAreas = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => {
+  .validator((d: unknown) => {
     const raw = d && typeof d === "object" && "data" in d ? (d as { data: unknown }).data : d;
     const schema = z.object({
       accessToken: z.string().min(1).optional(),
@@ -348,7 +361,7 @@ export const listDeliveryAreas = createServerFn({ method: "POST" })
   });
 
 export const saveDeliveryArea = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     parseWithDataOrDirect(
       z.object({
         accessToken: z.string().min(1),
@@ -388,7 +401,7 @@ export const saveDeliveryArea = createServerFn({ method: "POST" })
   });
 
 export const deleteDeliveryArea = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     parseWithDataOrDirect(z.object({ accessToken: z.string().min(1), id: z.string().uuid() }), d),
   )
   .handler(async ({ data }) => {
@@ -412,6 +425,7 @@ export type StoreSettings = {
   opening_hours_ar: string;
   phone: string;
   whatsapp: string;
+  email: string;
   map_lat: number | null;
   map_lng: number | null;
   map_embed_url: string | null;
@@ -420,7 +434,7 @@ export type StoreSettings = {
 };
 
 export const getStoreSettings = createServerFn({ method: "POST" })
-  .inputValidator((_d: unknown) => undefined)
+  .validator((_d: unknown) => undefined)
   .handler(async () => {
     const supabase = getServiceRoleClient();
     const { data, error } = await supabase
@@ -447,6 +461,7 @@ const storeSettingsPayloadSchema = z.object({
   opening_hours_ar: z.string().max(240).default(""),
   phone: z.string().max(60).default(""),
   whatsapp: z.string().max(60).default(""),
+  email: z.string().max(120).default(""),
   map_lat: z.number().nullable().optional(),
   map_lng: z.number().nullable().optional(),
   map_embed_url: z.string().max(1000).nullable().optional(),
@@ -454,7 +469,7 @@ const storeSettingsPayloadSchema = z.object({
 });
 
 export const saveStoreSettings = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => parseWithDataOrDirect(storeSettingsPayloadSchema, d))
+  .validator((d: unknown) => parseWithDataOrDirect(storeSettingsPayloadSchema, d))
   .handler(async ({ data }) => {
     const supabase = getUserScopedServerClient(data.accessToken);
     const payload: Record<string, unknown> = {
@@ -466,6 +481,7 @@ export const saveStoreSettings = createServerFn({ method: "POST" })
       opening_hours_ar: data.opening_hours_ar,
       phone: data.phone,
       whatsapp: data.whatsapp,
+      email: data.email,
       map_lat: data.map_lat ?? null,
       map_lng: data.map_lng ?? null,
       map_embed_url: data.map_embed_url ?? null,

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useI18n } from "@/lib/i18n";
 import { CheckCircle2, MessageCircle, RotateCcw, Store, MapPin, Clock } from "lucide-react";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PickupLocationModal } from "@/components/PickupLocationModal";
 import { generateBusinessWhatsAppMessage, generateBusinessWhatsAppUrl } from "@/lib/whatsapp";
@@ -30,6 +30,7 @@ function Success() {
   const { n } = Route.useSearch();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const s = useStoreSettings();
   const [locModalOpen, setLocModalOpen] = useState(false);
 
   // Live state reflecting the user's current order-status
@@ -122,7 +123,7 @@ function Success() {
   }, [isPickup]);
   const remainingLabel = computeRemaining(orderDetails?.pickupDeadlineAt);
 
-  let waUrl = `https://wa.me/${STORE.whatsapp.replace(/\D/g, "")}`;
+  let waUrl = `https://wa.me/${s.whatsapp.replace(/\D/g, "")}`;
   if (orderDetails) {
     const formattedMessage = generateBusinessWhatsAppMessage(
       {
@@ -141,7 +142,7 @@ function Success() {
       },
       lang,
     );
-    waUrl = generateBusinessWhatsAppUrl(STORE.whatsapp, formattedMessage);
+    waUrl = generateBusinessWhatsAppUrl(s.whatsapp, formattedMessage);
   }
 
   const onSendClick = () => markOrderWhatsappOpened(n);
@@ -174,7 +175,7 @@ function Success() {
 
           <p className="mt-2 text-xs text-muted-foreground">
             <MapPin className="inline h-3.5 w-3.5 me-1 text-primary" />
-            {isAr ? STORE.address.ar : STORE.address.en}
+            {isAr ? s.address_ar || s.address_en : s.address_en}
           </p>
 
           <button

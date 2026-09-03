@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useWishlist } from "@/lib/wishlist";
 import { CATEGORIES } from "@/lib/products";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import { BbmLogo } from "./BbmLogo";
 import { CategoryIcon } from "./CategoryIcon";
 import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
@@ -31,6 +31,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
   const { items: wishlistItems } = useWishlist();
   const nav = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const s = useStoreSettings();
 
   useEffect(() => {
     if (open) {
@@ -283,7 +284,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
         <div className="shrink-0 border-t border-border/60 bg-card/90 p-3.5 backdrop-blur space-y-2 pb-safe">
           <div className="grid grid-cols-2 gap-2">
             <a
-              href={whatsappHref(STORE.whatsapp)}
+              href={whatsappHref(s.whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-tap flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1ebe5d] transition"
@@ -293,7 +294,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
             </a>
 
             <a
-              href={`tel:${STORE.phonePrimary}`}
+              href={`tel:${s.phone.replace(/[^\d+]/g, "")}`}
               className="btn-tap flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-semibold text-foreground hover:bg-secondary transition"
             >
               <Phone className="h-4 w-4 text-primary shrink-0" />
@@ -302,7 +303,9 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
           </div>
 
           <div className="flex items-center justify-between px-1 pt-1 text-[11px] text-muted-foreground">
-            <span className="truncate">Munuki Block B, Juba</span>
+            <span className="truncate">
+              {s.address_en || "Munuki Block B, Juba"}
+            </span>
           </div>
         </div>
       </div>

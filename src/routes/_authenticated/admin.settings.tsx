@@ -24,6 +24,7 @@ import {
   MapPin,
   Map as MapIcon,
   Store,
+  Mail,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -344,6 +345,7 @@ function SettingsAdmin() {
               opening_hours_ar: read("opening_hours_ar", settings.opening_hours_ar),
               phone: read("phone", settings.phone),
               whatsapp: read("whatsapp", settings.whatsapp),
+              email: read("email", settings.email),
               map_lat: read("map_lat", "") === "" ? null : num("map_lat", 0),
               map_lng: read("map_lng", "") === "" ? null : num("map_lng", 0),
               map_embed_url: read("map_embed_url", "") || null,
@@ -426,6 +428,19 @@ function SettingsAdmin() {
           <div>
             <label className={label}>WhatsApp</label>
             <input className={input} name="whatsapp" defaultValue={settings.whatsapp} />
+          </div>
+          <div>
+            <label className={label}>
+              <Mail className="mr-1 inline h-3.5 w-3.5" />
+              {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+            </label>
+            <input
+              className={input}
+              name="email"
+              type="email"
+              defaultValue={settings.email}
+              placeholder="hello@bbm.ss"
+            />
           </div>
           <div>
             <label className={label}>

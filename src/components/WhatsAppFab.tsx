@@ -1,12 +1,13 @@
 import { useI18n } from "@/lib/i18n";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
 
 export function WhatsAppFab() {
   const { t } = useI18n();
+  const s = useStoreSettings();
   return (
     <a
-      href={whatsappHref(STORE.whatsapp)}
+      href={whatsappHref(s.whatsapp)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t("wa.help")}

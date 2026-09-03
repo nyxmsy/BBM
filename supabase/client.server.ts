@@ -2,35 +2,69 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // SERVER-ONLY FILE. Never import this from client components.
 
+const HARDCODED_FALLBACK_URL = "https://kwvsvxahejllixzwwxeb.supabase.co";
+
+function normalizeEnvVar(v: unknown): string | null {
+  if (v == null) return null;
+  const s = typeof v === "string" ? v : String(v);
+  const t = s.trim();
+  if (!t) return null;
+  if (t === "undefined" || t === "null") return null;
+  if (t.startsWith("http://") || t.startsWith("https://")) return t;
+  if (/^[\w.-]+\.[\w.-]+/.test(t)) return `https://${t}`;
+  return null;
+}
+
+function rawReadEnv(name: string): string | null {
+  try {
+    const fromProcess = process.env[name];
+    if (fromProcess != null) return fromProcess;
+  } catch {
+    /* process.env may throw in restricted environments */
+  }
+  try {
+    if (typeof import.meta !== "undefined" && (import.meta.env as any)?.[name]) {
+      return String((import.meta.env as any)[name]);
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 function getSupabaseUrl(): string {
-  return (
-    process.env.SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) ||
-    "https://kwvsvxahejllixzwwxeb.supabase.co"
-  );
+  const candidates = [
+    rawReadEnv("SUPABASE_URL"),
+    rawReadEnv("VITE_SUPABASE_URL"),
+  ];
+  for (const c of candidates) {
+    const n = normalizeEnvVar(c);
+    if (n) return n;
+  }
+  // Last-resort fallback so Netlify at least boots if env vars are missing.
+  // This matches the Supabase project URL from .env.local — this value is NOT
+  // a secret, it appears in every supabase.co call anyway.
+  return HARDCODED_FALLBACK_URL;
 }
 
 function getSupabaseAnonKey(): string {
-  return (
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
-    ""
-  );
+  const candidates = [rawReadEnv("SUPABASE_ANON_KEY"), rawReadEnv("VITE_SUPABASE_ANON_KEY")];
+  for (const c of candidates) {
+    if (c && c.length > 10) return c;
+  }
+  return "";
 }
 
 function getSupabaseServiceRoleKey(): string {
-  return (
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    (typeof import.meta !== "undefined" && import.meta.env?.SUPABASE_SERVICE_ROLE_KEY) ||
-    ""
-  );
+  const v = rawReadEnv("SUPABASE_SERVICE_ROLE_KEY");
+  return v && v.length > 10 ? v : "";
 }
 
 /** Anonymous server-side client — for public reads (product catalog, checkout). */
 export function getAnonServerClient(): SupabaseClient {
-  return createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey() || "invalid-missing-anon-key";
+  return createClient(url, key, {
     auth: { persistSession: false },
   });
 }
@@ -42,7 +76,9 @@ export function getUserScopedServerClient(accessToken: string | undefined | null
   if (!accessToken) {
     throw new Error("Not authenticated.");
   }
-  return createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey() || "invalid-missing-anon-key";
+  return createClient(url, key, {
     auth: { persistSession: false },
     global: {
       headers: { Authorization: `Bearer ${accessToken}` },

@@ -16,7 +16,7 @@ import { useCatalog } from "@/lib/catalog";
 import { ProductCard } from "@/components/ProductCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { WhatsAppIcon, whatsappHref } from "@/components/WhatsAppIcon";
-import { STORE } from "@/lib/store";
+import { useStoreSettings } from "@/lib/store-settings";
 import heroImg from "@/assets/hero.jpg";
 
 export const Route = createFileRoute("/")({
@@ -234,6 +234,9 @@ function Testimonials() {
 
 function Visit() {
   const { t, lang } = useI18n();
+  const s = useStoreSettings();
+  const address = lang === "ar" ? s.address_ar || s.address_en : s.address_en;
+  const hours = lang === "ar" ? s.opening_hours_ar || s.opening_hours_en : s.opening_hours_en;
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
       <div className="grid gap-8 rounded-3xl bg-secondary/50 p-6 sm:p-10 md:grid-cols-2">
@@ -246,20 +249,19 @@ function Visit() {
           </p>
           <ul className="mt-6 space-y-3 text-sm">
             <li className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-primary" />{" "}
-              {lang === "ar" ? STORE.address.ar : STORE.address.en}
+              <MapPin className="h-5 w-5 text-primary" /> {address}
             </li>
             <li className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-primary" /> {STORE.phonePrimary}
+              <Phone className="h-5 w-5 text-primary" /> {s.phone}
             </li>
             <li>
               <a
-                href={whatsappHref(STORE.whatsapp)}
+                href={whatsappHref(s.whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 hover:text-primary"
               >
-                <WhatsAppIcon className="h-5 w-5 text-[#25D366]" /> {STORE.whatsapp}
+                <WhatsAppIcon className="h-5 w-5 text-[#25D366]" /> {s.whatsapp}
               </a>
             </li>
           </ul>
@@ -276,7 +278,7 @@ function Visit() {
           </div>
           <div className="mt-4 font-display text-xl font-semibold">BBM Household</div>
           <div className="text-sm text-muted-foreground">
-            {lang === "ar" ? STORE.hours.ar : STORE.hours.en}
+            {hours}
           </div>
         </div>
       </div>
