@@ -23,8 +23,11 @@ function rawReadEnv(name: string): string | null {
     /* process.env may throw in restricted environments */
   }
   try {
-    if (typeof import.meta !== "undefined" && (import.meta.env as any)?.[name]) {
-      return String((import.meta.env as any)[name]);
+    if (
+      typeof import.meta !== "undefined" &&
+      (import.meta.env as Record<string, unknown>)?.[name]
+    ) {
+      return String((import.meta.env as Record<string, unknown>)[name]);
     }
   } catch {
     /* ignore */
@@ -33,10 +36,7 @@ function rawReadEnv(name: string): string | null {
 }
 
 function getSupabaseUrl(): string {
-  const candidates = [
-    rawReadEnv("SUPABASE_URL"),
-    rawReadEnv("VITE_SUPABASE_URL"),
-  ];
+  const candidates = [rawReadEnv("SUPABASE_URL"), rawReadEnv("VITE_SUPABASE_URL")];
   for (const c of candidates) {
     const n = normalizeEnvVar(c);
     if (n) return n;
@@ -65,7 +65,7 @@ export function getAnonServerClient(): SupabaseClient {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey() || "invalid-missing-anon-key";
   return createClient(url, key, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
@@ -79,7 +79,7 @@ export function getUserScopedServerClient(accessToken: string | undefined | null
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey() || "invalid-missing-anon-key";
   return createClient(url, key, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
     global: {
       headers: { Authorization: `Bearer ${accessToken}` },
     },
@@ -93,7 +93,7 @@ export function getServiceRoleClient(): SupabaseClient {
     throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY server env var.");
   }
   return createClient(getSupabaseUrl(), serviceKey, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
@@ -102,6 +102,6 @@ export function tryGetServiceRoleClient(): SupabaseClient | null {
   const serviceKey = getSupabaseServiceRoleKey();
   if (!serviceKey) return null;
   return createClient(getSupabaseUrl(), serviceKey, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }

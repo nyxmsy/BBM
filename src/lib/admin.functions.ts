@@ -20,26 +20,38 @@ export const getMyAccess = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const supabase = getUserScopedServerClient(data.accessToken);
-
       const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
-      if (userError || !userData?.user) {
-        return { isAdmin: false, isStaff: false };
+      if (userError) {
+        console.error("[getMyAccess] auth.getUser error:", userError);
+        return { isAdmin: false, isStaff: false, _debug: `auth error: ${userError.message}` };
+      }
+      if (!userData?.user) {
+        return { isAdmin: false, isStaff: false, _debug: "no user from token" };
       }
 
-      const { data: roleRows, error } = await supabase
+      const serviceClient = getServiceRoleClient();
+      const { data: roleRows, error } = await serviceClient
         .from("user_roles")
         .select("role")
         .eq("user_id", userData.user.id);
 
-      if (error || !roleRows) return { isAdmin: false, isStaff: false };
+      if (error) {
+        console.error("[getMyAccess] user_roles query error:", error);
+        return { isAdmin: false, isStaff: false, _debug: `db error: ${error.message}` };
+      }
+      if (!roleRows) {
+        return { isAdmin: false, isStaff: false, _debug: `no roles for uid=${userData.user.id}` };
+      }
 
       const roles = (roleRows as UserRoleRow[]).map((r) => r.role);
       return {
         isAdmin: roles.includes("admin"),
         isStaff: roles.includes("admin") || roles.includes("staff"),
       };
-    } catch {
-      return { isAdmin: false, isStaff: false };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[getMyAccess] unexpected exception:", msg);
+      return { isAdmin: false, isStaff: false, _debug: `exception: ${msg}` };
     }
   });
 
@@ -274,16 +286,18 @@ export const getInventoryDashboard = createServerFn({ method: "POST" })
       if (productsError) throw productsError;
 
       // Transform products to match inventory dashboard format
-      return (products as Array<{
-        id: string;
-        slug: string;
-        name_en: string;
-        name_ar: string;
-        stock: number;
-        price: number;
-        category: string;
-        is_active: boolean;
-      }>).map((p) => ({
+      return (
+        products as Array<{
+          id: string;
+          slug: string;
+          name_en: string;
+          name_ar: string;
+          stock: number;
+          price: number;
+          category: string;
+          is_active: boolean;
+        }>
+      ).map((p) => ({
         id: p.id,
         slug: p.slug,
         name_en: p.name_en,

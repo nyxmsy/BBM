@@ -24,8 +24,10 @@ import {
   XCircle,
   CheckCircle2,
   X,
+  Copy,
 } from "lucide-react";
 import { bilingual, useI18n } from "@/lib/i18n";
+import { generateAdminOrderCopyMessage } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: OrdersAdmin,
@@ -102,6 +104,7 @@ function OrdersAdmin() {
   const [confirmCancelOrder, setConfirmCancelOrder] = useState<Order | null>(null);
   const [pendingChange, setPendingChange] = useState<PendingStatusChange>(null);
   const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     text: string;
@@ -496,6 +499,44 @@ function OrdersAdmin() {
                         </button>
                       );
                     })}
+
+                    {/* Copy Order Details fallback */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const message = generateAdminOrderCopyMessage(
+                            o,
+                            lang === "ar" ? "ar" : "en",
+                          );
+                          await navigator.clipboard.writeText(message);
+                          setCopiedOrderId(o.id);
+                          window.setTimeout(() => setCopiedOrderId((c) => (c === o.id ? null : c)), 2000);
+                        } catch {
+                          setToast({
+                            type: "error",
+                            text: isAr ? "تعذّر نسخ تفاصيل الطلب." : "Failed to copy order details.",
+                          });
+                        }
+                      }}
+                      className={`btn-tap ms-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        copiedOrderId === o.id
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                          : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                      }`}
+                    >
+                      {copiedOrderId === o.id ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {isAr ? "تم النسخ ✓" : "Copied!"}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          {isAr ? "نسخ تفاصيل الطلب" : "Copy Order Details"}
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* Status History Toggle */}

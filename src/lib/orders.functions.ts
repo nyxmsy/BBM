@@ -610,10 +610,22 @@ export const listOrders = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => parseWithDataOrDirect(withAuthToken, d))
   .handler(async ({ data }): Promise<Order[]> => {
     try {
+      // Server-side authorization: only admin/staff may list ALL orders.
+      // Server functions are publicly invokable endpoints, so the UI gate in
+      // the admin layout is not sufficient on its own.
+      const supabase = getUserScopedServerClient(data.accessToken);
+      const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
+      if (userError || !userData?.user) return [];
+
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      const roles = ((roleRows ?? []) as { role: string }[]).map((r) => r.role);
+      if (!roles.includes("admin") && !roles.includes("staff")) return [];
+
       const privileged = tryGetServiceRoleClient();
       if (privileged) return await fetchOrders(privileged);
-
-      const supabase = getUserScopedServerClient(data.accessToken);
       return await fetchOrders(supabase);
     } catch (e) {
       console.warn("listOrders:", e);

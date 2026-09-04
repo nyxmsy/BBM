@@ -20,8 +20,17 @@ function rawReadEnv(name: string): string | null {
     /* ignore */
   }
   try {
-    if (typeof import.meta !== "undefined" && (import.meta.env as Record<string, unknown>)?.[name]) {
-      return String((import.meta.env as Record<string, unknown>)[name]);
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      // Literal member accesses so Vite statically inlines build-time values
+      // (see SUPABASE_CLIENT_DEFINE in vite.config.ts).
+      if (name === "VITE_SUPABASE_URL") {
+        const v = import.meta.env.VITE_SUPABASE_URL;
+        if (v != null) return String(v);
+      }
+      if (name === "VITE_SUPABASE_ANON_KEY") {
+        const v = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        if (v != null) return String(v);
+      }
     }
   } catch {
     /* ignore */
@@ -30,10 +39,7 @@ function rawReadEnv(name: string): string | null {
 }
 
 function getSupabaseUrl(): string | null {
-  const candidates = [
-    rawReadEnv("SUPABASE_URL"),
-    rawReadEnv("VITE_SUPABASE_URL"),
-  ];
+  const candidates = [rawReadEnv("SUPABASE_URL"), rawReadEnv("VITE_SUPABASE_URL")];
   for (const c of candidates) {
     const n = normalizeEnvVar(c);
     if (n) return n;
@@ -42,10 +48,7 @@ function getSupabaseUrl(): string | null {
 }
 
 function getSupabaseAnonKey(): string | null {
-  const candidates = [
-    rawReadEnv("SUPABASE_ANON_KEY"),
-    rawReadEnv("VITE_SUPABASE_ANON_KEY"),
-  ];
+  const candidates = [rawReadEnv("SUPABASE_ANON_KEY"), rawReadEnv("VITE_SUPABASE_ANON_KEY")];
   for (const c of candidates) {
     if (c && c.length > 10) return c;
   }

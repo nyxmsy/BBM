@@ -113,3 +113,88 @@ export function sendOrderNotificationWhatsApp(
   const message = generateBusinessWhatsAppMessage(data, lang);
   return generateBusinessWhatsAppUrl(phoneNumber, message);
 }
+
+/**
+ * Input shape for generateAdminOrderCopyMessage — the subset of the admin Order view
+ * needed to produce a WhatsApp-ready message.
+ */
+export interface AdminOrderCopyInput {
+  order_number: string;
+  customer_name: string;
+  phone: string;
+  phone2?: string | null;
+  address?: string | null;
+  area?: string | null;
+  city?: string | null;
+  notes?: string | null;
+  payment_method: string;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  pickup_deadline_at?: string | null;
+  order_items?: Array<{
+    name_en: string;
+    name_ar?: string | null;
+    qty: number;
+    unit_price: number;
+    line_total: number;
+  }>;
+}
+
+/**
+ * Generate a WhatsApp-ready order message from the admin's order view.
+ * Reuses the same formatting pattern as generateBusinessWhatsAppMessage but
+ * sources fields from the Admin Order structure and applies bilingual names.
+ */
+export function generateAdminOrderCopyMessage(
+  order: AdminOrderCopyInput,
+  lang: "en" | "ar" = "en",
+): string {
+  const isAr = lang === "ar";
+  const items = (order.order_items ?? []).map((it) => {
+    const name = isAr && it.name_ar ? it.name_ar : it.name_en || it.name_en;
+    return {
+      name,
+      qty: Number(it.qty ?? 0),
+      unitPrice: Number(it.unit_price ?? 0),
+      lineTotal: Number(it.line_total ?? 0),
+    };
+  });
+
+  const deadlineLabel = (() => {
+    if (order.payment_method !== "pickup" || !order.pickup_deadline_at) return null;
+    const ms = new Date(order.pickup_deadline_at).getTime() - Date.now();
+    if (ms <= 0) return isAr ? "انتهت فترة الاستلام" : "Pickup period expired";
+    const totalHours = Math.floor(ms / (1000 * 60 * 60));
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    if (days > 0) {
+      return isAr
+        ? `فترة الاستلام: ${days} ${days === 1 ? "يوم" : "أيام"} و${hours} ساعة متبقية`
+        : `Pickup deadline: ${days} day${days === 1 ? "" : "s"} ${hours}h remaining`;
+    }
+    return isAr
+      ? `فترة الاستلام: ${hours} ساعات متبقية`
+      : `Pickup deadline: ${hours} hour${hours === 1 ? "" : "s"} remaining`;
+  })();
+
+  return generateBusinessWhatsAppMessage(
+    {
+      orderNumber: order.order_number,
+      customerName: order.customer_name,
+      customerPhone: order.phone + (order.phone2 ? ` · ${order.phone2}` : ""),
+      items,
+      subtotal: Number(order.subtotal ?? 0),
+      deliveryFee: Number(order.delivery_fee ?? 0),
+      total: Number(order.total ?? 0),
+      paymentMethod: order.payment_method as "cod" | "pickup",
+      address: order.address ?? undefined,
+      area: order.area ?? undefined,
+      city: order.city ?? undefined,
+      notes: deadlineLabel
+        ? `${deadlineLabel}${order.notes ? ` | ${order.notes}` : ""}`
+        : order.notes ?? undefined,
+    },
+    lang,
+  );
+}

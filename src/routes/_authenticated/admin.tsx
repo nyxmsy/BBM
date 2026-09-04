@@ -128,6 +128,12 @@ function AdminLayout() {
             </p>
           )}
 
+          {!data?.isStaff && (data as { _debug?: string })?._debug && (
+            <p className="mt-3 rounded-lg bg-yellow-500/10 p-2 text-xs text-yellow-700 dark:text-yellow-200">
+              Debug: {(data as { _debug?: string })._debug}
+            </p>
+          )}
+
           {(claimMut.isError || claimErrorMsg) && (
             <p className="mt-3 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
               {claimErrorMsg || claimMut.error?.message}
