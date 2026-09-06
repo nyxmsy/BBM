@@ -15,4 +15,7 @@ export const STORE = {
   mpesaNumber: "+211 912 345 678",
   deliveryFeeJuba: 3000,
   hours: { en: "Sun – Friday · 6:00 – 20:00", ar: "الاثنين – السبت · 6:00 – 20:00" },
+  // Footer credit destination: "Crafted by Nyamsy". Set this to the Nyamsy
+  // contact/website page. While empty, the credit renders without a link.
+  nyamsyUrl: "",
 };

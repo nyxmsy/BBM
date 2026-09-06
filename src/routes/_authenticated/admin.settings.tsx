@@ -149,6 +149,8 @@ function SettingsAdmin() {
           map_lat: payload.map_lat ?? undefined,
           map_lng: payload.map_lng ?? undefined,
           map_embed_url: payload.map_embed_url ?? undefined,
+          facebook_url: payload.facebook_url ?? undefined,
+          tiktok_url: payload.tiktok_url ?? undefined,
           pickup_window_days: payload.pickup_window_days,
         },
       });
@@ -346,6 +348,8 @@ function SettingsAdmin() {
               phone: read("phone", settings.phone),
               whatsapp: read("whatsapp", settings.whatsapp),
               email: read("email", settings.email),
+              facebook_url: read("facebook_url", "").trim() || null,
+              tiktok_url: read("tiktok_url", "").trim() || null,
               map_lat: read("map_lat", "") === "" ? null : num("map_lat", 0),
               map_lng: read("map_lng", "") === "" ? null : num("map_lng", 0),
               map_embed_url: read("map_embed_url", "") || null,
@@ -441,6 +445,38 @@ function SettingsAdmin() {
               defaultValue={settings.email}
               placeholder="hello@bbm.ss"
             />
+          </div>
+          <div>
+            <label className={label}>
+              {lang === "ar" ? "رابط صفحة فيسبوك" : "Facebook page URL"}
+            </label>
+            <input
+              className={input}
+              name="facebook_url"
+              type="url"
+              defaultValue={settings.facebook_url ?? ""}
+              placeholder="https://facebook.com/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "يظهر في صفحة اتصل بنا والتذييل. اتركه فارغًا للإخفاء."
+                : "Shown on Contact and in the footer. Leave empty to hide."}
+            </p>
+          </div>
+          <div>
+            <label className={label}>{lang === "ar" ? "رابط تيك توك" : "TikTok page URL"}</label>
+            <input
+              className={input}
+              name="tiktok_url"
+              type="url"
+              defaultValue={settings.tiktok_url ?? ""}
+              placeholder="https://tiktok.com/@…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "يظهر في صفحة اتصل بنا والتذييل. اتركه فارغًا للإخفاء."
+                : "Shown on Contact and in the footer. Leave empty to hide."}
+            </p>
           </div>
           <div>
             <label className={label}>

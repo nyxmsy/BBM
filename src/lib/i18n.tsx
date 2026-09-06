@@ -65,7 +65,8 @@ const en: Dict = {
   "checkout.payment": "Payment Method",
   "checkout.cod": "Cash on Delivery",
   "checkout.pickup": "Store Pickup",
-  "checkout.pickup_warning": "If the order is not collected within the pickup window, it will be automatically cancelled.",
+  "checkout.pickup_warning":
+    "If the order is not collected within the pickup window, it will be automatically cancelled.",
   "checkout.place": "Place Order",
   "checkout.summary": "Order Summary",
   "success.title": "Thank you!",
@@ -85,6 +86,8 @@ const en: Dict = {
   "footer.hoursValue": "Mon – Sat · 8:00 – 20:00",
   "footer.rights": "All rights reserved.",
   "footer.staff": "Staff",
+  "footer.staffSignIn": "Staff sign in",
+  "footer.craftedBy": "Crafted by",
   "wa.help": "Need help? Chat on WhatsApp",
   "about.title": "About BBM",
   "about.body":
@@ -94,6 +97,11 @@ const en: Dict = {
   "contact.phone": "Phone",
   "contact.whatsapp": "WhatsApp",
   "contact.email": "Email",
+  "contact.facebook": "Facebook",
+  "contact.tiktok": "TikTok",
+  "contact.social": "Follow BBM",
+  "contact.facebookLive": "Follow BBM on Facebook for updates, offers and live sessions.",
+  "contact.tiktokFollow": "Watch BBM on TikTok.",
   "form.required": "Please fill in all required fields.",
   // Staff/Admin translations
   "staff.title": "Staff Sign In",
@@ -249,7 +257,8 @@ const ar: Dict = {
   "checkout.payment": "طريقة الدفع",
   "checkout.cod": "الدفع عند الاستلام",
   "checkout.pickup": "الاستلام من المتجر",
-  "checkout.pickup_warning": "إذا لم يتم استلام الطلب خلال فترة الاستلام المحددة، سيتم إلغاؤه تلقائيًا.",
+  "checkout.pickup_warning":
+    "إذا لم يتم استلام الطلب خلال فترة الاستلام المحددة، سيتم إلغاؤه تلقائيًا.",
   "checkout.place": "تأكيد الطلب",
   "checkout.summary": "ملخص الطلب",
   "success.title": "شكرًا لك!",
@@ -269,6 +278,8 @@ const ar: Dict = {
   "footer.hoursValue": "الاثنين – السبت · 8:00 – 20:00",
   "footer.rights": "جميع الحقوق محفوظة.",
   "footer.staff": "الموظفون",
+  "footer.staffSignIn": "دخول الموظفين",
+  "footer.craftedBy": "تصميم وتطوير",
   "wa.help": "تحتاج مساعدة؟ راسلنا على واتساب",
   "about.title": "عن BBM",
   "about.body":
@@ -278,6 +289,11 @@ const ar: Dict = {
   "contact.phone": "هاتف",
   "contact.whatsapp": "واتساب",
   "contact.email": "البريد الإلكتروني",
+  "contact.facebook": "فيسبوك",
+  "contact.tiktok": "تيك توك",
+  "contact.social": "تابع BBM",
+  "contact.facebookLive": "تابع BBM على فيسبوك لآخر التحديثات والعروض والبث المباشر.",
+  "contact.tiktokFollow": "شاهد فيديوهات BBM على تيك توك.",
   "form.required": "يرجى تعبئة جميع الحقول المطلوبة.",
   // Staff/Admin translations
   "staff.title": "تسجيل دخول الموظفين",

@@ -303,10 +303,17 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
           </div>
 
           <div className="flex items-center justify-between px-1 pt-1 text-[11px] text-muted-foreground">
-            <span className="truncate">
-              {s.address_en || "Munuki Block B, Juba"}
-            </span>
+            <span className="truncate">{s.address_en || "Munuki Block B, Juba"}</span>
           </div>
+
+          {/* Discreet staff utility link — kept out of the customer-facing footer */}
+          <Link
+            to="/auth"
+            onClick={onClose}
+            className="block px-1 pt-0.5 text-[10px] tracking-wide text-muted-foreground/50 transition hover:text-muted-foreground"
+          >
+            {t("footer.staffSignIn")}
+          </Link>
         </div>
       </div>
     </div>

@@ -16,6 +16,8 @@ export type StoreSettingsView = {
   map_lat: number | null;
   map_lng: number | null;
   map_embed_url: string | null;
+  facebook_url: string;
+  tiktok_url: string;
 };
 
 const FALLBACK: StoreSettingsView = {
@@ -31,6 +33,8 @@ const FALLBACK: StoreSettingsView = {
   map_lat: null,
   map_lng: null,
   map_embed_url: null,
+  facebook_url: "",
+  tiktok_url: "",
 };
 
 export const getStoreSettingsView = createServerFn({ method: "POST" })
@@ -41,7 +45,7 @@ export const getStoreSettingsView = createServerFn({ method: "POST" })
       const { data, error } = await supabase
         .from("store_settings")
         .select(
-          "store_name_en, store_name_ar, address_en, address_ar, opening_hours_en, opening_hours_ar, phone, whatsapp, email, map_lat, map_lng, map_embed_url",
+          "store_name_en, store_name_ar, address_en, address_ar, opening_hours_en, opening_hours_ar, phone, whatsapp, email, map_lat, map_lng, map_embed_url, facebook_url, tiktok_url",
         )
         .eq("id", 1)
         .maybeSingle();
@@ -61,6 +65,8 @@ export const getStoreSettingsView = createServerFn({ method: "POST" })
         map_lat: (row.map_lat as number | null) ?? null,
         map_lng: (row.map_lng as number | null) ?? null,
         map_embed_url: (row.map_embed_url as string | null) ?? null,
+        facebook_url: (row.facebook_url as string | null) ?? "",
+        tiktok_url: (row.tiktok_url as string | null) ?? "",
       };
     } catch {
       return FALLBACK;

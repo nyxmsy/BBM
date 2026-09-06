@@ -10,6 +10,8 @@ import { WhatsAppIcon, whatsappHref } from "./WhatsAppIcon";
 import { useStoreSettings } from "@/lib/store-settings";
 import { LanguageHint } from "./LanguageHint";
 import { auth } from "@/lib/auth";
+import { STORE } from "@/lib/store";
+import { FacebookIcon, TikTokIcon } from "./SocialIcons";
 
 const NAV: { key: string; to: string }[] = [
   { key: "nav.home", to: "/" },
@@ -274,15 +276,53 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-        <p>
-          © {new Date().getFullYear()} BBM · {t("footer.rights")}
-        </p>
-        <Link
-          to="/auth"
-          className="mt-2 inline-block text-[10px] tracking-wide text-muted-foreground/50 hover:text-muted-foreground"
-        >
-          {t("footer.staff")}
-        </Link>
+        <div className="flex flex-col items-center gap-2">
+          <p>
+            © {new Date().getFullYear()} BBM · {t("footer.rights")}
+          </p>
+
+          {(s.facebook_url || s.tiktok_url) && (
+            <div className="flex items-center gap-3">
+              {s.facebook_url && (
+                <a
+                  href={s.facebook_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="text-muted-foreground/70 transition hover:text-[#1877F2]"
+                >
+                  <FacebookIcon className="h-4 w-4" />
+                </a>
+              )}
+              {s.tiktok_url && (
+                <a
+                  href={s.tiktok_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="TikTok"
+                  className="text-muted-foreground/70 transition hover:text-foreground"
+                >
+                  <TikTokIcon className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+          )}
+
+          {STORE.nyamsyUrl ? (
+            <a
+              href={STORE.nyamsyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] tracking-wide text-muted-foreground/50 transition hover:text-muted-foreground"
+            >
+              {t("footer.craftedBy")} <span className="font-medium">Nyamsy</span>
+            </a>
+          ) : (
+            <p className="text-[10px] tracking-wide text-muted-foreground/50">
+              {t("footer.craftedBy")} <span className="font-medium">Nyamsy</span>
+            </p>
+          )}
+        </div>
       </div>
     </footer>
   );

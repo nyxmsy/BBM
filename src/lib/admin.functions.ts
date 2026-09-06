@@ -443,6 +443,8 @@ export type StoreSettings = {
   map_lat: number | null;
   map_lng: number | null;
   map_embed_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
   pickup_window_days: number;
   updated_at: string;
 };
@@ -479,6 +481,18 @@ const storeSettingsPayloadSchema = z.object({
   map_lat: z.number().nullable().optional(),
   map_lng: z.number().nullable().optional(),
   map_embed_url: z.string().max(1000).nullable().optional(),
+  facebook_url: z
+    .string()
+    .max(300)
+    .nullable()
+    .optional()
+    .refine((v) => !v || /^https?:\/\//i.test(v), "Facebook URL must start with http(s)://"),
+  tiktok_url: z
+    .string()
+    .max(300)
+    .nullable()
+    .optional()
+    .refine((v) => !v || /^https?:\/\//i.test(v), "TikTok URL must start with http(s)://"),
   pickup_window_days: z.number().int().min(1).max(30),
 });
 
@@ -499,6 +513,8 @@ export const saveStoreSettings = createServerFn({ method: "POST" })
       map_lat: data.map_lat ?? null,
       map_lng: data.map_lng ?? null,
       map_embed_url: data.map_embed_url ?? null,
+      facebook_url: data.facebook_url?.trim() || null,
+      tiktok_url: data.tiktok_url?.trim() || null,
       pickup_window_days: data.pickup_window_days,
       updated_at: new Date().toISOString(),
     };
